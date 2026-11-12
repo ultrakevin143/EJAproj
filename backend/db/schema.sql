@@ -115,6 +115,60 @@ CREATE TABLE IF NOT EXISTS cleaned_records (
 );
 CREATE INDEX IF NOT EXISTS idx_cleaned_records_session ON cleaned_records(session_id);
 
+-- ─── 7. MULTI-SOURCE SOURCE 1: CRM MEMBERS (FRONT-DESK) ──────
+CREATE TABLE IF NOT EXISTS crm_members (
+  member_id        TEXT PRIMARY KEY,
+  full_name        TEXT NOT NULL,
+  dob              TEXT,
+  email            TEXT,
+  membership_tier  TEXT DEFAULT 'Standard',
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── 8. MULTI-SOURCE SOURCE 2: CLINIC HEALTH SCREENINGS ──────
+CREATE TABLE IF NOT EXISTS clinic_screenings (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id           TEXT NOT NULL,
+  parq_status         TEXT,
+  resting_heart_rate  INT,
+  assessment_date     TEXT,
+  medical_flag        TEXT DEFAULT 'NO',
+  notes               TEXT DEFAULT '',
+  created_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── 9. MULTI-SOURCE SOURCE 3: TURNSTILE CHECK-IN LOGS ────────
+CREATE TABLE IF NOT EXISTS turnstile_scans (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  checkin_id      TEXT,
+  member_id       TEXT NOT NULL,
+  scan_time       TIMESTAMPTZ DEFAULT NOW(),
+  facility_zone   TEXT DEFAULT 'Main Gym Floor',
+  access_granted  BOOLEAN DEFAULT TRUE,
+  denial_reason   TEXT DEFAULT '',
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── 10. TARGET DATA WAREHOUSE: INTEGRATED MEMBER 360 ─────────
+CREATE TABLE IF NOT EXISTS integrated_members_360 (
+  member_id                TEXT PRIMARY KEY,
+  full_name                TEXT,
+  dob                      TEXT,
+  email                    TEXT,
+  membership_tier          TEXT,
+  parq_status              TEXT,
+  resting_heart_rate       INT,
+  assessment_date          TEXT,
+  total_checkins           INT DEFAULT 0,
+  last_checkin_time        TEXT,
+  frequent_zone            TEXT,
+  safety_clearance_status  TEXT,
+  risk_tier                TEXT,
+  dqm_flags_count          INT DEFAULT 0,
+  dqm_flags                TEXT[],
+  updated_at               TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ─── SEED: Default Governance Rules ──────────────────────────
 INSERT INTO governance_rules (rule_name, rule_description, dqm_principle, enforcement_level, is_active)
 VALUES

@@ -36,6 +36,7 @@ const reviewRoutes     = require('./routes/review.routes');
 const governanceRoutes = require('./routes/governance.routes');
 const sessionRoutes    = require('./routes/session.routes');
 const exportRoutes     = require('./routes/export.routes');
+const roleRoutes       = require('./routes/role.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -56,6 +57,7 @@ app.use('/api/review',      reviewRoutes);
 app.use('/api/governance',  governanceRoutes);
 app.use('/api/sessions',    sessionRoutes);
 app.use('/api/export',      exportRoutes);
+app.use('/api/roles',       roleRoutes);
 
 // ─── Health Check ────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
