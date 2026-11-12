@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Radio, CheckCircle2, XCircle, AlertTriangle, RefreshCw, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Radio, CheckCircle2, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface ScanItem {
   checkin_id: string;
@@ -17,8 +17,8 @@ export default function TurnstileView() {
   const [loading, setLoading] = useState(true);
 
   // Scanning Station State
-  const [memberId, setMemberId] = useState('MBR-1151');
-  const [facilityZone, setFacilityZone] = useState('High-Intensity Training Area');
+  const [memberId, setMemberId] = useState('MBR-1150');
+  const [facilityZone, setFacilityZone] = useState('High-Intensity HIIT Studio');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any | null>(null);
 
@@ -76,7 +76,7 @@ export default function TurnstileView() {
         <div>
           <h1>Facility IoT RFID Turnstile Terminal</h1>
           <p>
-            Automated machine-to-machine check-in scanner. Queries the integrated warehouse to unlock physical barriers in real time.
+            Automated physical access barrier. Verifies real-time member health clearance against the PostgreSQL warehouse.
           </p>
         </div>
         <button onClick={fetchRecentScans} className="btn btn-secondary">
@@ -104,7 +104,7 @@ export default function TurnstileView() {
           <dd className="tabular-nums text-red-700">
             {recentScans.filter((s) => !s.access_granted).length}
           </dd>
-          <span>Flagged or unassessed members</span>
+          <span>Cardiovascular flags / unassessed</span>
         </div>
         <div>
           <dt>Machine IoT Authority</dt>
@@ -123,7 +123,7 @@ export default function TurnstileView() {
               <p className="text-xs text-slate-500">Tap RFID keycard or simulate member arrival.</p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded">
-              Machine ID: GATE_01
+              Machine ID: BGC_GATE_01
             </span>
           </div>
 
@@ -135,7 +135,7 @@ export default function TurnstileView() {
                   type="text"
                   value={memberId}
                   onChange={(e) => setMemberId(e.target.value)}
-                  placeholder="e.g. MBR-1151"
+                  placeholder="e.g. MBR-1150"
                   className="flex-1 font-mono font-bold text-base"
                 />
                 <button
@@ -145,7 +145,7 @@ export default function TurnstileView() {
                   className="btn btn-primary"
                 >
                   <Radio className="h-4 w-4" />
-                  <span>{scanning ? 'Reading...' : 'Tap RFID Badge'}</span>
+                  <span>{scanning ? 'Reading...' : 'Tap RFID Keycard'}</span>
                 </button>
               </div>
             </div>
@@ -156,11 +156,12 @@ export default function TurnstileView() {
                 value={facilityZone}
                 onChange={(e) => setFacilityZone(e.target.value)}
               >
-                <option value="Main Gym Floor">Main Gym Floor</option>
-                <option value="High-Intensity Training Area">High-Intensity Training Area (Strict PAR-Q)</option>
-                <option value="Cardio &amp; Treadmills">Cardio &amp; Treadmills</option>
-                <option value="Sauna &amp; Spa Zone">Sauna &amp; Spa Zone</option>
-                <option value="Swimming Pool">Swimming Pool</option>
+                <option value="Main Gym Floor (Free Weights & Machines)">Main Gym Floor (Free Weights &amp; Machines)</option>
+                <option value="High-Intensity HIIT Studio">High-Intensity HIIT Studio (Strict PAR-Q)</option>
+                <option value="Cardio Deck (Treadmills & Ellipticals)">Cardio Deck (Treadmills &amp; Ellipticals)</option>
+                <option value="Sauna & Steam Wellness Room">Sauna &amp; Steam Wellness Room</option>
+                <option value="Olympic Swimming Pool">Olympic Swimming Pool</option>
+                <option value="Boxing & MMA Ring">Boxing &amp; MMA Ring</option>
               </select>
             </div>
 
@@ -171,22 +172,22 @@ export default function TurnstileView() {
                 <button
                   type="button"
                   onClick={() => {
-                    setMemberId('MBR-1151');
-                    handleSimulateScan('MBR-1151');
+                    setMemberId('MBR-1150');
+                    handleSimulateScan('MBR-1150');
                   }}
                   className="btn btn-secondary text-xs px-2.5 py-1 text-red-700 hover:bg-red-50 border-red-200"
                 >
-                  Scan Marcus Vance (Flagged)
+                  Scan Danilo Mercado (Flagged HR)
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setMemberId('MBR-1001');
-                    handleSimulateScan('MBR-1001');
+                    setMemberId('MBR-1146');
+                    handleSimulateScan('MBR-1146');
                   }}
                   className="btn btn-secondary text-xs px-2.5 py-1 text-emerald-700 hover:bg-emerald-50 border-emerald-200"
                 >
-                  Scan MBR-1001 (Cleared)
+                  Scan Divina Manalo (Cleared)
                 </button>
                 <button
                   type="button"
@@ -196,7 +197,7 @@ export default function TurnstileView() {
                   }}
                   className="btn btn-secondary text-xs px-2.5 py-1 text-amber-700 hover:bg-amber-50 border-amber-200"
                 >
-                  Scan MBR-9999 (Unregistered Orphan)
+                  Scan Unregistered RFID (Orphan Scan)
                 </button>
               </div>
             </div>
@@ -213,7 +214,7 @@ export default function TurnstileView() {
           {!scanResult ? (
             <div className="py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">
               <Radio className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-              <p className="text-sm font-medium">Ready for RFID Tap</p>
+              <p className="text-sm font-medium">Ready for RFID Keycard Tap</p>
               <span className="text-xs text-slate-400">Scanner active at {facilityZone}</span>
             </div>
           ) : scanResult.accessGranted ? (

@@ -54,11 +54,11 @@ export default function ManagerView() {
   ];
 
   const zoneThroughputData = [
-    { zone: 'Main Floor', scans: 94 },
-    { zone: 'Cardio', scans: 78 },
-    { zone: 'High-Intensity', scans: 52 },
-    { zone: 'Swimming Pool', scans: 43 },
-    { zone: 'Sauna & Spa', scans: 30 }
+    { zone: 'Main Gym Floor', scans: 96 },
+    { zone: 'Cardio Deck', scans: 74 },
+    { zone: 'High-Intensity HIIT', scans: 51 },
+    { zone: 'Olympic Pool', scans: 42 },
+    { zone: 'Sauna & Steam', scans: 30 }
   ];
 
   const filteredMembers = warehouse.filter((m) =>

@@ -12,14 +12,21 @@ const crypto = require('crypto');
 /**
  * Seed initial multi-source data if empty
  */
-async function seedMultiSourceIfEmpty() {
+async function seedMultiSourceIfEmpty(force = false) {
   try {
     const existing = await query('SELECT COUNT(*) AS count FROM crm_members');
-    if (Number(existing.rows[0]?.count) > 0) {
+    if (!force && Number(existing.rows[0]?.count) > 0) {
       return { seeded: false, message: 'Multi-source tables already populated.' };
     }
 
-    console.log('🌱 Seeding multi-source tables (CRM, Clinic, Turnstile)...');
+    if (force) {
+      await query('DELETE FROM integrated_members_360');
+      await query('DELETE FROM turnstile_scans');
+      await query('DELETE FROM clinic_screenings');
+      await query('DELETE FROM crm_members');
+    }
+
+    console.log('🌱 Seeding multi-source tables with authentic Filipino datasets...');
     const { members, screenings, checkins } = generateMultiSourceDatasets(150);
 
     // 1. Seed CRM Members

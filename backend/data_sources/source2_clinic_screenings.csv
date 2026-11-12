@@ -1,275 +1,138 @@
-member_id,parq_status,resting_heart_rate,assessment_date,medical_flag
-MBR-1001,Cleared,58,5/26/2026,NO
-MBR-1002,Unknown,82,26-11-2025,NO
-MBR-1003,Fla,97,2026-02-04,YES
-MBR-1005,Cleared,69,5/27/2026,NO
-MBR-1006,Clrd,260,2026-05-02,NO
-MBR-1008,Fla,89,2026-07-11,YES
-MBR-1009,Clrd,106,3/2/2026,NO
-MBR-1010,,260,1/25/2026,NO
-MBR-1011,Cleared,81,10/27/2026,NO
-MBR-1012,Fla,80,2025-13-01,YES
-MBR-1013,,88,27-8-2026,NO
-MBR-1014,Fla,98,12-8-2026,YES
-MBR-1016,Cleared,56,11/15/2025,NO
-MBR-1017,Pnd,91,12/1/2025,NO
-MBR-1018,Unknown,76,2026-03-16,NO
-MBR-1019,Clrd,76,2/7/2026,NO
-MBR-1020,Fla,93,6/17/2026,YES
-MBR-1021,Unknown,84,3-10-2026,NO
-MBR-1022,,70,3-2-2026,NO
-MBR-1023,,84,16-7-2026,NO
-MBR-1024,Cleared,81,9-10-2026,NO
-MBR-1025,Clrd,81,2025-13-01,NO
-MBR-1026,Flagged,72,11-5-2026,YES
-MBR-1027,Flagged,81,2026-01-23,YES
-MBR-1028,Unknown,74,2026-03-05,NO
-MBR-1029,Cleared,95,2026-05-23,NO
-MBR-1030,Pnd,92,1/16/2026,NO
-MBR-1031,Cleared,59,10/18/2026,NO
-MBR-1033,Pnd,74,8/20/2026,NO
-MBR-1035,Pnd,80,9/28/2026,NO
-MBR-1036,Cleared,98,3-1-2026,NO
-MBR-1037,Cleared,92,2025-12-18,NO
-MBR-1038,Clrd,95,14-9-2026,NO
-MBR-1039,Cleared,91,7-10-2026,NO
-MBR-1040,,93,2026-01-07,NO
-MBR-1041,Cleared,93,2026-08-31,NO
-MBR-1042,Unknown,70,2026-04-13,NO
-MBR-1043,Cleared,86,2026-07-18,NO
-MBR-1045,Fla,87,7/11/2026,YES
-MBR-1047,,76,2026-06-25,NO
-MBR-1048,Clrd,75,8/28/2026,NO
-MBR-1049,Clrd,84,2026-08-18,NO
-MBR-1050,Clrd,81,15-6-2026,NO
-MBR-1051,Fla,65,1/24/2026,YES
-MBR-1052,Unknown,57,3/18/2026,NO
-MBR-1053,Fla,88,2025-11-18,YES
-MBR-1056,Fla,57,12/30/2025,YES
-MBR-1057,Cleared,56,6/3/2026,NO
-MBR-1058,Flagged,75,2026-04-13,YES
-MBR-1060,Fla,100,11/10/2026,YES
-MBR-1061,Clrd,70,2026-03-28,NO
-MBR-1062,Flagged,68,3/10/2026,YES
-MBR-1063,Flagged,104,2026-10-14,YES
-MBR-1064,Clrd,100,7/29/2026,NO
-MBR-1065,Clrd,66,2025-12-12,NO
-MBR-1066,Clrd,65,2026-09-20,NO
-MBR-1067,Fla,93,27-9-2026,YES
-MBR-1068,Pnd,68,2/8/2026,NO
-MBR-1069,Clrd,101,12-9-2026,NO
-MBR-1070,Fla,67,2026-02-08,YES
-MBR-1071,Cleared,85,2026-06-24,NO
-MBR-1072,Flagged,66,2026-01-18,YES
-MBR-1073,Pnd,95,17-2-2026,NO
-MBR-1074,Fla,89,2026-02-03,YES
-MBR-1075,Flagged,71,9-1-2026,YES
-MBR-1076,Flagged,70,10-7-2026,YES
-MBR-1077,Unknown,71,10/1/2026,NO
-MBR-1079,Pnd,66,10-7-2026,NO
-MBR-1080,,63,2026-06-28,NO
-MBR-1081,Clrd,65,2026-07-30,NO
-MBR-1082,Pnd,72,5/25/2026,NO
-MBR-1083,Cleared,83,2026-10-03,NO
-MBR-1084,Cleared,92,1/11/2026,NO
-MBR-1085,Cleared,90,11/12/2025,NO
-MBR-1087,Cleared,68,22-1-2026,NO
-MBR-1088,Cleared,68,11/14/2025,NO
-MBR-1089,,65,11/14/2025,NO
-MBR-1090,Cleared,76,7/19/2026,NO
-MBR-1091,Fla,89,9-4-2026,YES
-MBR-1092,Fla,103,17-7-2026,YES
-MBR-1093,,97,16-8-2026,NO
-MBR-1094,Clrd,66,2025-13-01,NO
-MBR-1095,Flagged,102,2026-10-29,YES
-MBR-1096,Cleared,56,2025-12-22,NO
-MBR-1097,Pnd,110,2026-07-24,NO
-MBR-1098,Flagged,93,17-6-2026,YES
-MBR-1099,Cleared,81,11/16/2025,NO
-MBR-1100,Flagged,57,10/28/2026,YES
-MBR-1102,Flagged,65,2026-05-07,YES
-MBR-1103,Fla,90,2026-07-29,YES
-MBR-1104,Pnd,71,4/21/2026,NO
-MBR-1105,Cleared,260,2-9-2026,NO
-MBR-1106,,78,6/4/2026,NO
-MBR-1107,Clrd,106,7/25/2026,NO
-MBR-1108,Pnd,76,5/2/2026,NO
-MBR-1109,Clrd,68,7-8-2026,NO
-MBR-1110,,82,25-4-2026,NO
-MBR-1111,,99,2025-13-01,NO
-MBR-1112,,55,2026-07-31,NO
-MBR-1113,Cleared,101,23-3-2026,NO
-MBR-1114,Cleared,109,11/25/2025,NO
-MBR-1115,Fla,90,2025-11-24,YES
-MBR-1116,Cleared,82,2026-04-23,NO
-MBR-1117,Pnd,77,24-1-2026,NO
-MBR-1118,Cleared,80,2025-13-01,NO
-MBR-1120,Pnd,60,3-4-2026,NO
-MBR-1121,Cleared,85,6/19/2026,NO
-MBR-1122,Flagged,99,2026-03-14,YES
-MBR-1123,Fla,96,2026-02-04,YES
-MBR-1124,Flagged,83,25-10-2026,YES
-MBR-1125,Fla,62,2026-02-27,YES
-MBR-1126,Flagged,68,1/27/2026,YES
-MBR-1127,Pnd,97,28-11-2025,NO
-MBR-1128,Flagged,60,2/12/2026,YES
-MBR-1129,Cleared,87,22-1-2026,NO
-MBR-1130,Clrd,90,6/16/2026,NO
-MBR-1131,Clrd,62,4-6-2026,NO
-MBR-1132,Clrd,77,21-2-2026,NO
-MBR-1133,Flagged,64,5/13/2026,YES
-MBR-1134,Cleared,101,12/14/2025,NO
-MBR-1135,Cleared,83,2026-09-15,NO
-MBR-1136,Pnd,107,2025-12-07,NO
-MBR-1137,Pnd,63,18-9-2026,NO
-MBR-1138,Pnd,103,11-6-2026,NO
-MBR-1139,Flagged,260,26-1-2026,YES
-MBR-1140,Cleared,66,17-10-2026,NO
-MBR-1141,Flagged,107,8/4/2026,YES
-MBR-1142,Fla,62,1/7/2026,YES
-MBR-1143,Clrd,71,31-7-2026,NO
-MBR-1144,Unknown,73,4-8-2026,NO
-MBR-1145,Fla,78,6-9-2026,YES
-MBR-1146,Fla,106,2026-05-25,YES
-MBR-1147,Pnd,93,1/29/2026,NO
-MBR-1148,Cleared,65,2025-13-01,NO
-MBR-1149,Pnd,83,27-12-2025,NO
-MBR-1150,Pnd,100,2026-10-15,NO
-MBR-1151,Unknown,104,1/6/2026,NO
-MBR-1152,Flagged,68,2026-09-05,YES
-MBR-1153,,72,5/19/2026,NO
-MBR-1154,Cleared,61,2025-12-28,NO
-MBR-1155,Pnd,79,2026-02-06,NO
-MBR-1156,Clrd,65,2026-09-15,NO
-MBR-1157,Cleared,88,2026-11-11,NO
-MBR-1158,Clrd,91,2026-10-30,NO
-MBR-1160,Pnd,84,6/20/2026,NO
-MBR-1161,Flagged,62,27-12-2025,YES
-MBR-1162,Flagged,72,4/7/2026,YES
-MBR-1163,Clrd,69,2026-02-11,NO
-MBR-1165,,86,2026-08-15,NO
-MBR-1166,Pnd,94,27-9-2026,NO
-MBR-1167,Cleared,105,2026-10-23,NO
-MBR-1168,Cleared,67,2/19/2026,NO
-MBR-1170,Unknown,89,25-3-2026,NO
-MBR-1171,Fla,66,2026-09-08,YES
-MBR-1172,Cleared,70,2026-06-15,NO
-MBR-1173,Pnd,55,2026-03-22,NO
-MBR-1174,Cleared,57,10-12-2025,NO
-MBR-1175,Clrd,94,10/12/2026,NO
-MBR-1176,Fla,59,12/8/2025,YES
-MBR-1177,Cleared,96,8-8-2026,NO
-MBR-1179,Fla,79,2026-08-05,YES
-MBR-1180,Unknown,57,2026-10-01,NO
-MBR-1181,Cleared,65,6/18/2026,NO
-MBR-1182,,96,6-2-2026,NO
-MBR-1183,Unknown,62,2025-12-10,NO
-MBR-1184,Fla,72,2026-08-27,YES
-MBR-1185,,98,15-10-2026,NO
-MBR-1186,Clrd,68,11/26/2025,NO
-MBR-1187,Clrd,260,14-11-2025,NO
-MBR-1189,Pnd,260,4-3-2026,NO
-MBR-1191,Unknown,98,24-1-2026,NO
-MBR-1192,Cleared,105,27-6-2026,NO
-MBR-1193,,60,2026-06-18,NO
-MBR-1194,Cleared,103,5/28/2026,NO
-MBR-1195,Clrd,84,2026-05-24,NO
-MBR-1196,Cleared,95,1/27/2026,NO
-MBR-1197,Cleared,97,2026-07-08,NO
-MBR-1198,Pnd,81,2026-09-04,NO
-MBR-1199,Pnd,61,5-6-2026,NO
-MBR-1201,,62,11/13/2025,NO
-MBR-1202,Unknown,55,11/1/2026,NO
-MBR-1203,Pnd,69,2026-01-27,NO
-MBR-1204,Cleared,100,2026-04-29,NO
-MBR-1205,,76,23-2-2026,NO
-MBR-1206,Flagged,94,2026-07-02,YES
-MBR-1207,,90,12-9-2026,NO
-MBR-1208,Clrd,87,2026-02-10,NO
-MBR-1209,Unknown,86,9/13/2026,NO
-MBR-1210,Clrd,109,2026-07-21,NO
-MBR-1211,Clrd,92,13-11-2025,NO
-MBR-1212,Flagged,89,9/4/2026,YES
-MBR-1213,Cleared,82,12/13/2025,NO
-MBR-1214,,69,2025-12-04,NO
-MBR-1215,Flagged,94,23-4-2026,YES
-MBR-1216,Cleared,64,21-7-2026,NO
-MBR-1217,Unknown,78,19-10-2026,NO
-MBR-1218,Cleared,106,9-3-2026,NO
-MBR-1219,Unknown,105,2025-11-18,NO
-MBR-1220,Cleared,79,3/2/2026,NO
-MBR-1221,Cleared,95,25-5-2026,NO
-MBR-1222,Cleared,61,16-11-2025,NO
-MBR-1223,Unknown,63,2026-08-01,NO
-MBR-1224,Unknown,109,2026-04-22,NO
-MBR-1225,Pnd,109,11-5-2026,NO
-MBR-1226,Flagged,109,2026-02-28,YES
-MBR-1228,Fla,67,3-10-2026,YES
-MBR-1229,Fla,60,2025-12-22,YES
-MBR-1230,Pnd,91,3/7/2026,NO
-MBR-1231,Clrd,80,3/19/2026,NO
-MBR-1232,Fla,83,2026-03-03,YES
-MBR-1233,Cleared,95,24-7-2026,NO
-MBR-1234,Fla,62,2026-02-04,YES
-MBR-1235,Flagged,76,11/24/2025,YES
-MBR-1236,Clrd,107,26-1-2026,NO
-MBR-1237,Flagged,95,2026-08-20,YES
-MBR-1238,Cleared,98,2025-11-15,NO
-MBR-1239,Flagged,89,2026-08-17,YES
-MBR-1240,Fla,61,1-6-2026,YES
-MBR-1242,Cleared,57,2026-06-02,NO
-MBR-1243,Unknown,109,8-7-2026,NO
-MBR-1244,Flagged,58,23-6-2026,YES
-MBR-1245,Cleared,80,1/27/2026,NO
-MBR-1246,Cleared,95,18-1-2026,NO
-MBR-1247,Cleared,68,14-8-2026,NO
-MBR-1248,Fla,65,12/31/2025,YES
-MBR-1249,Cleared,97,2026-09-29,NO
-MBR-1250,Clrd,92,8/3/2026,NO
-MBR-1251,Pnd,76,2025-13-01,NO
-MBR-1252,Unknown,67,2026-09-15,NO
-MBR-1253,Unknown,55,1/5/2026,NO
-MBR-1254,Fla,73,8/7/2026,YES
-MBR-1255,Fla,98,28-8-2026,YES
-MBR-1256,Cleared,260,2/3/2026,NO
-MBR-1257,Unknown,55,2026-04-05,NO
-MBR-1258,Pnd,79,9/18/2026,NO
-MBR-1259,Clrd,96,26-3-2026,NO
-MBR-1260,Clrd,64,26-3-2026,NO
-MBR-1261,Pnd,67,21-12-2025,NO
-MBR-1262,Cleared,67,7/29/2026,NO
-MBR-1263,Cleared,93,27-6-2026,NO
-MBR-1264,Unknown,104,7-10-2026,NO
-MBR-1265,,57,10-11-2026,NO
-MBR-1266,Flagged,63,6/18/2026,YES
-MBR-1267,Cleared,100,2026-03-06,NO
-MBR-1268,Cleared,89,2026-05-05,NO
-MBR-1269,Clrd,57,12-9-2026,NO
-MBR-1270,Pnd,58,6-10-2026,NO
-MBR-1271,Fla,88,10/22/2026,YES
-MBR-1272,Clrd,81,12/15/2025,NO
-MBR-1273,Cleared,98,8/19/2026,NO
-MBR-1274,Fla,78,23-10-2026,YES
-MBR-1275,Flagged,84,22-6-2026,YES
-MBR-1276,Flagged,95,20-11-2025,YES
-MBR-1277,Cleared,260,24-8-2026,NO
-MBR-1278,Fla,79,30-10-2026,YES
-MBR-1279,Cleared,101,2026-08-18,NO
-MBR-1280,Fla,67,21-9-2026,YES
-MBR-1281,Cleared,102,4/1/2026,NO
-MBR-1282,Cleared,102,2026-07-20,NO
-MBR-1283,Clrd,70,11-6-2026,NO
-MBR-1284,Cleared,102,1-4-2026,NO
-MBR-1285,Pnd,72,10/4/2026,NO
-MBR-1286,Cleared,90,2025-13-01,NO
-MBR-1287,Fla,89,8-7-2026,YES
-MBR-1288,Pnd,260,12/20/2025,NO
-MBR-1290,Pnd,75,2026-05-26,NO
-MBR-1291,,97,2025-11-13,NO
-MBR-1292,Pnd,94,2026-09-23,NO
-MBR-1293,Unknown,71,8/11/2026,NO
-MBR-1294,Cleared,260,1-8-2026,NO
-MBR-1295,Cleared,82,30-4-2026,NO
-MBR-1296,Pnd,102,2-3-2026,NO
-MBR-1297,Cleared,80,10-4-2026,NO
-MBR-1298,Cleared,99,8/24/2026,NO
+member_id,parq_status,resting_heart_rate,assessment_date,medical_flag,notes
+MBR-1001,Pending,58,23-5-2026,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1002,Unknown,79,30-3-2026,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1003,Clrd,81,2026-02-05,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1004,Cleared,84,1/26/2026,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1005,Cleared,89,2/5/2026,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1006,Cleared,78,19-1-2026,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1007,Cleared,91,17-3-2026,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1008,Unknown,96,13-4-2026,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1009,Fla,66,26-3-2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1010,Cleared,75,2026-02-26,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1012,Cleared,80,10-9-2026,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1013,,83,2/2/2026,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1014,,77,2026-04-24,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1015,Cleared,87,2/2/2026,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1016,Clrd,98,2026-03-11,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1017,Clrd,77,2/24/2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1018,,65,2026-05-26,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1019,,94,2026-02-03,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1020,Cleared,90,2026-06-21,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1021,Pending,84,2026-08-31,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1023,Clrd,89,2026-05-10,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1024,Fla,58,7/14/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1025,Fla,93,2026-08-15,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1026,,80,7-2-2026,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1027,Cleared,71,2/19/2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1028,Clrd,68,2025-13-01,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1029,Cleared,60,22-7-2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1030,Flagged,260,14-5-2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1031,Pending,93,2026-09-28,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1032,Flagged,68,2026-06-12,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1034,Unknown,69,2026-09-24,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1035,Cleared,75,18-7-2026,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1036,Cleared,98,16-1-2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1037,Fla,79,2026-08-30,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1038,Unknown,91,29-5-2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1039,Pending,74,2-7-2026,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1040,Unknown,78,21-6-2026,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1041,Cleared,61,7/9/2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1042,Unknown,78,2026-07-23,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1043,Cleared,98,2026-09-06,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1045,Cleared,80,2026-05-16,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1046,Cleared,97,27-3-2026,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1047,,96,2026-04-18,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1048,Flagged,67,4-6-2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1049,Clrd,71,3/29/2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1050,Pending,84,2026-04-13,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1051,Clrd,66,6/10/2026,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1052,Flagged,93,2026-03-15,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1053,,75,2026-04-07,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1054,Flagged,86,10/9/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1056,Flagged,64,2025-13-01,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1057,Unknown,63,4/9/2026,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1058,Unknown,62,1/25/2026,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1059,Cleared,61,2026-04-20,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1060,Fla,260,2/26/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1061,Cleared,76,2026-03-15,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1062,Cleared,83,22-8-2026,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1063,Cleared,74,4/29/2026,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1064,Flagged,92,2026-04-26,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1065,Cleared,69,15-10-2026,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1067,,94,2026-08-11,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1068,Cleared,63,8-3-2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1069,Pending,92,4/17/2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1070,Flagged,59,26-8-2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1071,Unknown,85,2026-09-01,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1072,,63,9/1/2026,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1073,Cleared,70,8-4-2026,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1074,Flagged,88,2026-11-10,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1075,Cleared,76,10-8-2026,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1076,Clrd,91,2026-06-18,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1078,,59,1/20/2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1079,Cleared,80,10/1/2026,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1080,,89,20-7-2026,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1081,Flagged,73,2026-02-05,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1082,Cleared,69,26-4-2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1083,Cleared,73,2026-02-17,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1084,Cleared,94,2025-13-01,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1085,Unknown,75,2026-08-21,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1086,,80,4/2/2026,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1087,Unknown,80,7/14/2026,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1089,Cleared,90,15-4-2026,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1090,Flagged,260,4/2/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1091,Fla,83,2026-08-24,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1092,Fla,97,7/4/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1093,Unknown,63,8/22/2026,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1094,Cleared,69,2026-01-20,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1095,Pending,71,2026-09-21,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1096,Clrd,65,2026-06-02,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1097,Fla,67,2026-08-20,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1098,Clrd,81,4/12/2026,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1100,Flagged,95,2026-03-18,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1101,Unknown,61,2026-06-30,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1102,Clrd,83,2026-07-18,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1103,Cleared,71,20-3-2026,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1104,Cleared,81,2026-03-06,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1105,Clrd,81,5-4-2026,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1106,Flagged,90,11-11-2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1107,Cleared,96,9/24/2026,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1108,,59,2/11/2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1109,Flagged,67,2026-09-13,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1111,Fla,92,2026-02-26,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1112,,68,2025-13-01,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1113,Fla,59,9/2/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1114,Clrd,71,2026-02-23,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1115,,63,2026-05-23,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1116,,90,15-5-2026,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1117,Cleared,65,5/25/2026,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1118,Cleared,88,2026-01-26,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1119,Unknown,69,2026-01-19,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1120,Flagged,260,12-7-2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1122,Clrd,92,4/5/2026,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1123,Cleared,82,2026-10-10,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1124,,90,2/9/2026,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1125,Fla,76,2026-07-13,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1126,Unknown,93,2/22/2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1127,Clrd,58,2026-07-28,NO,Type 2 diabetes managed with oral hypoglycemic; cleared with hydration protocol.
+MBR-1128,Cleared,74,11-4-2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1129,,61,4/3/2026,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1130,Pending,59,4/20/2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1131,Pending,61,21-9-2026,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1133,Cleared,98,19-10-2026,NO,History of exertional chest tightness; flagged for 2D Echo stress evaluation.
+MBR-1134,,95,1-4-2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1135,Clrd,96,2026-07-11,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1136,,67,2026-04-04,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1137,Unknown,90,10/13/2026,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1138,Flagged,95,6/7/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1139,Pending,93,2026-09-12,NO,Elevated resting pulse observed; referral issued to club physician for clearance.
+MBR-1140,Unknown,83,2025-13-01,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1141,,88,8/10/2026,NO,Post-viral respiratory check; resting heart rate 108 BPM (tachycardia); workout paused.
+MBR-1142,Flagged,97,7/28/2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.
+MBR-1144,Clrd,86,2026-10-13,NO,Hypertension Stage 1 noted; resting BP 145/95; requires cardiologist clearance letter.
+MBR-1145,Clrd,83,2026-07-01,NO,Previous right knee ACL reconstruction; cleared for upper body and spin bike only.
+MBR-1146,Cleared,86,2026-05-07,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1147,Cleared,67,2/14/2026,NO,Cleared for standard resistance and cardio; normal resting ECG.
+MBR-1148,Unknown,71,16-1-2026,NO,Mild bronchial asthma; maintenance inhaler present; cleared for moderate exercise.
+MBR-1149,Cleared,63,23-8-2026,NO,Routine annual health screening complete; optimal cardiovascular vitals.
+MBR-1150,Flagged,260,18-1-2026,YES,Cardiovascular risk flagged on PAR-Q. Physical turnstile access restricted pending doctor sign-off.

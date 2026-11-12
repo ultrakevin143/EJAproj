@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, CheckCircle2, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
+import { Search, UserPlus, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Member {
   member_id: string;
@@ -17,16 +17,16 @@ export default function FrontDeskView() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Form State
-  const [memberId, setMemberId] = useState('MBR-1152');
-  const [fullName, setFullName] = useState('');
-  const [dob, setDob] = useState('');
-  const [email, setEmail] = useState('');
-  const [membershipTier, setMembershipTier] = useState('Standard');
+  const [memberId, setMemberId] = useState('MBR-1151');
+  const [fullName, setFullName] = useState('Carlos Alcantara');
+  const [dob, setDob] = useState('1994-08-15');
+  const [email, setEmail] = useState('carlos.alcantara@up.edu.ph');
+  const [membershipTier, setMembershipTier] = useState('Gold Annual Pass');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Clearance Check State
-  const [checkId, setCheckId] = useState('MBR-1151');
+  const [checkId, setCheckId] = useState('MBR-1150');
   const [clearanceResult, setClearanceResult] = useState<any | null>(null);
   const [checkingClearance, setCheckingClearance] = useState(false);
 
@@ -51,7 +51,7 @@ export default function FrontDeskView() {
 
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memberId || !fullName) return;
+    if (!fullName) return;
 
     setSubmitting(true);
     setFeedback(null);
@@ -60,17 +60,16 @@ export default function FrontDeskView() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          member_id: memberId,
-          full_name: fullName,
+          full_name: fullName.trim(),
           dob,
-          email,
+          email: email.trim(),
           membership_tier: membershipTier
         })
       });
       const data = await res.json();
       if (data.success) {
         setFeedback({ type: 'success', message: data.message });
-        setMemberId(`MBR-${Math.floor(1150 + Math.random() * 850)}`);
+        setMemberId(`MBR-${Math.floor(1152 + Math.random() * 800)}`);
         setFullName('');
         setEmail('');
         setDob('');
@@ -115,7 +114,7 @@ export default function FrontDeskView() {
       <div className="page-heading">
         <div>
           <h1>Member Intake &amp; Front-Desk CRM</h1>
-          <p>Register new club members and verify keycard safety clearance before physical entry.</p>
+          <p>Register new club members and verify keycard safety clearance before physical gym entry.</p>
         </div>
         <button onClick={fetchMembers} className="btn btn-secondary">
           <RefreshCw className="h-4 w-4" />
@@ -131,17 +130,17 @@ export default function FrontDeskView() {
           <span>Source 1: Front-Desk CRM Table</span>
         </div>
         <div>
-          <dt>VIP Memberships</dt>
-          <dd className="tabular-nums">{members.filter((m) => m.membership_tier.includes('VIP')).length}</dd>
-          <span>All-access priority tier</span>
+          <dt>Gold / VIP Memberships</dt>
+          <dd className="tabular-nums">{members.filter((m) => m.membership_tier.includes('Gold') || m.membership_tier.includes('VIP')).length}</dd>
+          <span>All-access priority tiers</span>
         </div>
         <div>
-          <dt>Standard Memberships</dt>
-          <dd className="tabular-nums">{members.filter((m) => m.membership_tier === 'Standard').length}</dd>
+          <dt>Standard Monthly</dt>
+          <dd className="tabular-nums">{members.filter((m) => m.membership_tier.includes('Standard')).length}</dd>
           <span>Standard floor access</span>
         </div>
         <div>
-          <dt>HIPAA/GDPR Security Boundary</dt>
+          <dt>Data Privacy Act Boundary</dt>
           <dd className="text-sm font-semibold text-blue-900 mt-2">Active Isolation</dd>
           <span>Clinical records hidden from reception</span>
         </div>
@@ -156,9 +155,18 @@ export default function FrontDeskView() {
               <h2 className="text-base font-bold text-slate-900">Enroll New Club Member</h2>
               <p className="text-xs text-slate-500">Inputs populate Source 1 (CRM) in PostgreSQL warehouse.</p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded">
-              Role: FRONT_DESK
-            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setFullName('Carlos Alcantara');
+                setDob('1994-08-15');
+                setEmail('carlos.alcantara@up.edu.ph');
+                setMembershipTier('Gold Annual Pass');
+              }}
+              className="text-xs text-blue-700 hover:underline font-semibold"
+            >
+              Autofill Sample (Carlos Alcantara)
+            </button>
           </div>
 
           {feedback && (
@@ -181,24 +189,13 @@ export default function FrontDeskView() {
           <form onSubmit={handleEnroll}>
             <div className="form-grid mb-4">
               <div className="form-group">
-                <label>Member ID *</label>
-                <input
-                  type="text"
-                  required
-                  value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
-                  placeholder="MBR-1152"
-                />
-              </div>
-
-              <div className="form-group">
                 <label>Full Legal Name *</label>
                 <input
                   type="text"
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Marcus Vance"
+                  placeholder="e.g. Carlos Alcantara"
                 />
               </div>
 
@@ -217,19 +214,20 @@ export default function FrontDeskView() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="marcus.vance@example.com"
+                  placeholder="carlos.alcantara@up.edu.ph"
                 />
               </div>
 
-              <div className="form-group lg:col-span-2">
+              <div className="form-group">
                 <label>Membership Tier</label>
                 <select
                   value={membershipTier}
                   onChange={(e) => setMembershipTier(e.target.value)}
                 >
-                  <option value="Standard">Standard Tier</option>
-                  <option value="Premium">Premium Tier</option>
-                  <option value="VIP All-Access">VIP All-Access Tier</option>
+                  <option value="Standard Monthly">Standard Monthly (Php 2,200/mo)</option>
+                  <option value="Gold Annual Pass">Gold Annual Pass (Php 22,000/yr)</option>
+                  <option value="VIP Platinum All-Access">VIP Platinum All-Access</option>
+                  <option value="Student / Youth Athlete">Student / Youth Athlete</option>
                 </select>
               </div>
             </div>
@@ -259,7 +257,7 @@ export default function FrontDeskView() {
                   type="text"
                   value={checkId}
                   onChange={(e) => setCheckId(e.target.value)}
-                  placeholder="e.g. MBR-1151"
+                  placeholder="e.g. MBR-1150"
                   className="flex-1"
                 />
                 <button

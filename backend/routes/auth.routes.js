@@ -1,6 +1,6 @@
 /**
  * Authentication Routes for Role-Based Access Control
- * Inspired by Folio Enterprise Auth System
+ * Authentic Filipino gym operations team accounts
  */
 
 const express = require('express');
@@ -10,55 +10,47 @@ const DEMO_ACCOUNTS = {
   'frontdesk@fitquality.local': {
     id: 'usr_frontdesk_01',
     email: 'frontdesk@fitquality.local',
-    name: 'Front-Desk Receptionist',
+    name: 'Marites Dela Cruz',
     role: 'FRONTDESK',
-    title: 'Intake & Badge Verification',
+    title: 'Front-Desk Intake Officer',
     description: 'Enrolls new members and checks keycard safety clearance.'
   },
   'clinic@fitquality.local': {
     id: 'usr_clinic_01',
     email: 'clinic@fitquality.local',
-    name: 'Dr. Sarah Miller, PT',
+    name: 'Dr. Maria Elena Reyes, MD',
     role: 'CLINIC',
-    title: 'Clinical Health Assessor',
-    description: 'Records PAR-Q questionnaires, heart rates, and cardiac flags.'
+    title: 'Lead Clinical Fitness Assessor',
+    description: 'Records PAR-Q questionnaires, resting heart rates, and cardiac flags.'
   },
   'turnstile@fitquality.local': {
     id: 'usr_turnstile_01',
     email: 'turnstile@fitquality.local',
-    name: 'Turnstile Terminal #1',
+    name: 'Turnstile Gate 01 (BGC Branch)',
     role: 'TURNSTILE',
-    title: 'IoT Gate Controller',
+    title: 'Facility IoT RFID Terminal',
     description: 'Machine account querying integrated warehouse for physical access.'
   },
   'steward@fitquality.local': {
     id: 'usr_steward_01',
     email: 'steward@fitquality.local',
-    name: 'Elena Rostova',
+    name: 'Danilo Fernandez',
     role: 'STEWARD',
-    title: 'Lead Data Steward',
+    title: 'Lead Data Quality Steward',
     description: 'Executes multi-source ETL pipelines and manages DQM review queues.'
   },
   'manager@fitquality.local': {
     id: 'usr_manager_01',
     email: 'manager@fitquality.local',
-    name: 'Marcus Vance, GM',
+    name: 'Engr. Ricardo Mendoza, GM',
     role: 'MANAGER',
-    title: 'General Manager',
+    title: 'General Manager & Head of Operations',
     description: 'Strategic BI 360 overview, risk KPIs, and operations monitoring.'
-  },
-  'admin@fitquality.local': {
-    id: 'usr_admin_01',
-    email: 'admin@fitquality.local',
-    name: 'System Administrator',
-    role: 'MANAGER',
-    title: 'System Administrator',
-    description: 'Full administrative access and configuration.'
   }
 };
 
-// In-memory session tracking for active demo user
-let currentSessionUser = DEMO_ACCOUNTS['steward@fitquality.local'];
+// In-memory session tracking for active demo user (defaults to null for login)
+let currentSessionUser = null;
 
 // POST /api/auth/login
 router.post('/login', (req, res) => {
@@ -69,11 +61,10 @@ router.post('/login', (req, res) => {
   if (!account) {
     return res.status(401).json({
       success: false,
-      error: 'Invalid credentials. Please select one of the classroom demo accounts.'
+      error: 'Invalid account email. Please choose one of the designated role accounts.'
     });
   }
 
-  // Accept demo password or allow direct login for demo accounts
   currentSessionUser = account;
   return res.json({
     success: true,
@@ -84,9 +75,15 @@ router.post('/login', (req, res) => {
 
 // GET /api/auth/me
 router.get('/me', (req, res) => {
+  if (!currentSessionUser) {
+    return res.status(401).json({
+      success: false,
+      user: null
+    });
+  }
   return res.json({
     success: true,
-    user: currentSessionUser || DEMO_ACCOUNTS['steward@fitquality.local']
+    user: currentSessionUser
   });
 });
 

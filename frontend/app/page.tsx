@@ -1,19 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import WorkspaceShell, { UserRole } from '../components/WorkspaceShell';
+import WorkspaceShell, { UserAccount } from '../components/WorkspaceShell';
+import LoginPage from '../components/LoginPage';
 import FrontDeskView from '../components/roles/FrontDeskView';
 import ClinicView from '../components/roles/ClinicView';
 import TurnstileView from '../components/roles/TurnstileView';
 import StewardView from '../components/roles/StewardView';
 import ManagerView from '../components/roles/ManagerView';
-import GovernanceView from '../components/GovernanceView';
 import { fetchLatestAudit } from '../lib/api';
 import { ErrorLogItem } from '../types/dqm';
 
 export default function HomePage() {
-  const [currentRole, setCurrentRole] = useState<UserRole>('MANAGER');
-  const [activeSection, setActiveSection] = useState<string>('dashboard');
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [errorLog, setErrorLog] = useState<ErrorLogItem[]>([]);
 
@@ -34,21 +33,24 @@ export default function HomePage() {
     loadLatestAudit();
   }, []);
 
+  // When not authenticated, show Sir Dan's Folio-style Login Page
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={(user) => setCurrentUser(user)} />;
+  }
+
+  // When signed in, the user can ONLY access their designated dashboard
   return (
     <WorkspaceShell
-      currentRole={currentRole}
-      onRoleChange={setCurrentRole}
-      activeSection={activeSection}
-      onSectionChange={setActiveSection}
+      currentUser={currentUser}
+      onLogout={() => setCurrentUser(null)}
     >
-      {activeSection === 'dashboard' && <ManagerView />}
-      {activeSection === 'frontdesk' && <FrontDeskView />}
-      {activeSection === 'clinic' && <ClinicView />}
-      {activeSection === 'turnstile' && <TurnstileView />}
-      {activeSection === 'steward' && (
+      {currentUser.role === 'FRONTDESK' && <FrontDeskView />}
+      {currentUser.role === 'CLINIC' && <ClinicView />}
+      {currentUser.role === 'TURNSTILE' && <TurnstileView />}
+      {currentUser.role === 'STEWARD' && (
         <StewardView sessionId={sessionId} errorLog={errorLog} />
       )}
-      {activeSection === 'governance' && <GovernanceView />}
+      {currentUser.role === 'MANAGER' && <ManagerView />}
     </WorkspaceShell>
   );
 }

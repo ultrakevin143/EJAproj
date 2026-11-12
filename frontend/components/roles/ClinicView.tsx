@@ -18,11 +18,11 @@ export default function ClinicView() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Form State
-  const [memberId, setMemberId] = useState('MBR-1151');
+  const [memberId, setMemberId] = useState('MBR-1150');
   const [parqStatus, setParqStatus] = useState('Flagged');
-  const [restingHr, setRestingHr] = useState('112');
+  const [restingHr, setRestingHr] = useState('114');
   const [medicalFlag, setMedicalFlag] = useState(true);
-  const [notes, setNotes] = useState('Tachycardia observed during treadmill intake assessment.');
+  const [notes, setNotes] = useState('Exertional tachycardia noted during treadmill evaluation. Referred for cardiologist clearance before high-intensity gym floor access.');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -135,11 +135,19 @@ export default function ClinicView() {
               Evaluations directly determine safety clearance status in the integrated warehouse.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded">
-              Role: CLINIC_ASSESSOR
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setMemberId('MBR-1150');
+              setParqStatus('Flagged');
+              setRestingHr('114');
+              setMedicalFlag(true);
+              setNotes('Exertional tachycardia noted during treadmill evaluation. Referred for cardiologist clearance before high-intensity gym floor access.');
+            }}
+            className="text-xs text-blue-700 hover:underline font-semibold"
+          >
+            Autofill Sample (Danilo Mercado - Flagged)
+          </button>
         </div>
 
         {feedback && (
@@ -163,30 +171,14 @@ export default function ClinicView() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="form-group">
               <label>Member ID *</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  required
-                  value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
-                  placeholder="MBR-1151"
-                  className="flex-1 font-mono font-semibold"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMemberId('MBR-1151');
-                    setParqStatus('Flagged');
-                    setRestingHr('112');
-                    setMedicalFlag(true);
-                    setNotes('Tachycardia observed during treadmill intake assessment.');
-                  }}
-                  className="btn btn-secondary text-xs px-2.5 py-1"
-                  title="Autofill sample test case"
-                >
-                  Demo Autofill
-                </button>
-              </div>
+              <input
+                type="text"
+                required
+                value={memberId}
+                onChange={(e) => setMemberId(e.target.value)}
+                placeholder="MBR-1150"
+                className="font-mono font-semibold"
+              />
             </div>
 
             <div className="form-group">
@@ -198,7 +190,7 @@ export default function ClinicView() {
                   if (e.target.value === 'Flagged') setMedicalFlag(true);
                 }}
               >
-                <option value="Cleared">Cleared (Safe to Exercise)</option>
+                <option value="Cleared">Cleared (Safe for Full Gym Access)</option>
                 <option value="Flagged">Flagged (Medical Risk Detected)</option>
                 <option value="Pending">Pending (Doctor Referral Required)</option>
               </select>

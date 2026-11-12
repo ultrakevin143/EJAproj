@@ -218,6 +218,21 @@ router.get('/turnstile/recent-scans', async (req, res) => {
 // 4. DATA QUALITY STEWARD ROLE (ETL PIPELINE)
 // ═════════════════════════════════════════════════════════════════════
 
+// POST /api/roles/steward/reseed
+router.post('/steward/reseed', async (req, res) => {
+  try {
+    await seedMultiSourceIfEmpty(true);
+    const etlResult = await executeLiveDatabaseEtl();
+    return res.json({
+      success: true,
+      message: 'Database reseeded successfully with authentic Filipino fitness screening data.',
+      etlResult
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // POST /api/roles/steward/run-etl
 router.post('/steward/run-etl', async (req, res) => {
   try {
