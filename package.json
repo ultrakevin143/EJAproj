@@ -1,0 +1,16 @@
+{
+  "name": "eja-fitquality-dqm-system",
+  "version": "1.0.0",
+  "description": "Full-stack Data Quality Management (DQM) & Governance System for Gym Member Health Screening (Next.js + Express.js + PostgreSQL / Neon)",
+  "scripts": {
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "build": "cd backend && cd ../frontend && npm run build",
+    "migrate": "cd backend && npm run migrate",
+    "generate": "cd backend && npm run generate"
+  },
+  "keywords": ["dqm", "data-governance", "nextjs", "express", "postgresql", "neon", "fitness", "health-screening"],
+  "author": "Group 5",
+  "license": "ISC"
+}
+
