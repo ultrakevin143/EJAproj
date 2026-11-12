@@ -329,3 +329,4 @@ export default function ManagerView() {
     </div>
   );
 }
+
