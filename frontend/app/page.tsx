@@ -8,11 +8,13 @@ import ClinicView from '../components/roles/ClinicView';
 import TurnstileView from '../components/roles/TurnstileView';
 import StewardView from '../components/roles/StewardView';
 import ManagerView from '../components/roles/ManagerView';
+import GovernanceView from '../components/GovernanceView';
 import { fetchLatestAudit } from '../lib/api';
 import { ErrorLogItem } from '../types/dqm';
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [activeSection, setActiveSection] = useState<string>('dashboard');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [errorLog, setErrorLog] = useState<ErrorLogItem[]>([]);
 
@@ -33,24 +35,36 @@ export default function HomePage() {
     loadLatestAudit();
   }, []);
 
-  // When not authenticated, show Sir Dan's Folio-style Login Page
+  const handleLoginSuccess = (user: UserAccount) => {
+    setCurrentUser(user);
+    if (user.role === 'FRONTDESK') setActiveSection('frontdesk');
+    else if (user.role === 'CLINIC') setActiveSection('clinic');
+    else if (user.role === 'TURNSTILE') setActiveSection('turnstile');
+    else if (user.role === 'STEWARD') setActiveSection('steward');
+    else setActiveSection('dashboard');
+  };
+
+  // When not authenticated, show Login Page
   if (!currentUser) {
-    return <LoginPage onLoginSuccess={(user) => setCurrentUser(user)} />;
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // When signed in, the user can ONLY access their designated dashboard
+  // When signed in:
   return (
     <WorkspaceShell
       currentUser={currentUser}
       onLogout={() => setCurrentUser(null)}
+      activeSection={activeSection}
+      onSectionChange={setActiveSection}
     >
-      {currentUser.role === 'FRONTDESK' && <FrontDeskView />}
-      {currentUser.role === 'CLINIC' && <ClinicView />}
-      {currentUser.role === 'TURNSTILE' && <TurnstileView />}
-      {currentUser.role === 'STEWARD' && (
+      {activeSection === 'dashboard' && <ManagerView />}
+      {activeSection === 'frontdesk' && <FrontDeskView />}
+      {activeSection === 'clinic' && <ClinicView />}
+      {activeSection === 'turnstile' && <TurnstileView />}
+      {activeSection === 'steward' && (
         <StewardView sessionId={sessionId} errorLog={errorLog} />
       )}
-      {currentUser.role === 'MANAGER' && <ManagerView />}
+      {activeSection === 'governance' && <GovernanceView />}
     </WorkspaceShell>
   );
 }

@@ -7,12 +7,14 @@ import {
   Stethoscope,
   Radio,
   Layers,
+  ShieldCheck,
   ChevronRight,
   LogOut,
-  Database
+  Database,
+  Lock
 } from 'lucide-react';
 
-export type UserRole = 'FRONTDESK' | 'CLINIC' | 'TURNSTILE' | 'STEWARD' | 'MANAGER';
+export type UserRole = 'FRONTDESK' | 'CLINIC' | 'TURNSTILE' | 'STEWARD' | 'MANAGER' | 'ADMIN';
 
 export interface UserAccount {
   id: string;
@@ -25,53 +27,72 @@ export interface UserAccount {
 interface WorkspaceShellProps {
   currentUser: UserAccount;
   onLogout: () => void;
+  activeSection: string;
+  onSectionChange: (section: string) => void;
   children: React.ReactNode;
 }
 
 export default function WorkspaceShell({
   currentUser,
   onLogout,
+  activeSection,
+  onSectionChange,
   children
 }: WorkspaceShellProps) {
-  // Map each role strictly to its designated dashboard configuration
-  const roleConfig: Record<
-    UserRole,
-    { label: string; icon: any; subtitle: string; scope: string }
-  > = {
-    FRONTDESK: {
+  const isAdministrator = currentUser.role === 'MANAGER' || currentUser.role === 'ADMIN';
+
+  // Navigation configuration with role-based permissions
+  const allNavItems = [
+    {
+      id: 'dashboard',
+      label: 'Executive 360',
+      icon: LayoutDashboard,
+      subtitle: 'Target Warehouse Overview',
+      allowedRoles: ['MANAGER', 'ADMIN']
+    },
+    {
+      id: 'frontdesk',
       label: 'Member Intake CRM',
       icon: UserCheck,
-      subtitle: 'Source 1: Front-Desk Ingestion',
-      scope: 'Member Registration & Badge Clearance'
+      subtitle: 'Source 1: Member Registration',
+      allowedRoles: ['FRONTDESK', 'MANAGER', 'ADMIN']
     },
-    CLINIC: {
-      label: 'Clinical Health Screening',
+    {
+      id: 'clinic',
+      label: 'Clinical PAR-Q',
       icon: Stethoscope,
-      subtitle: 'Source 2: Clinic Screenings',
-      scope: 'PAR-Q Assessments & Resting HR'
+      subtitle: 'Source 2: Health Screening',
+      allowedRoles: ['CLINIC', 'MANAGER', 'ADMIN']
     },
-    TURNSTILE: {
-      label: 'Turnstile Gate Terminal',
+    {
+      id: 'turnstile',
+      label: 'Turnstile IoT Gate',
       icon: Radio,
-      subtitle: 'Source 3: IoT Physical Access',
-      scope: 'Automated RFID Scan & Gate Control'
+      subtitle: 'Source 3: Physical Access',
+      allowedRoles: ['TURNSTILE', 'MANAGER', 'ADMIN']
     },
-    STEWARD: {
+    {
+      id: 'steward',
       label: 'ETL & Quality Management',
       icon: Layers,
-      subtitle: 'Multi-Source Integration Engine',
-      scope: 'ETL Pipeline, DQM Rules & Review Queue'
+      subtitle: 'Multi-Source ETL Pipeline',
+      allowedRoles: ['STEWARD', 'MANAGER', 'ADMIN']
     },
-    MANAGER: {
-      label: 'Executive 360 Dashboard',
-      icon: LayoutDashboard,
-      subtitle: 'Target Warehouse Analytics',
-      scope: 'Consolidated Member 360 & Operations'
+    {
+      id: 'governance',
+      label: 'Data Governance',
+      icon: ShieldCheck,
+      subtitle: 'EDM Rules & Ownership',
+      allowedRoles: ['STEWARD', 'MANAGER', 'ADMIN']
     }
-  };
+  ];
 
-  const currentConfig = roleConfig[currentUser.role];
-  const CurrentIcon = currentConfig.icon;
+  // Filter items visible to this account
+  const visibleNavItems = allNavItems.filter((item) =>
+    item.allowedRoles.includes(currentUser.role)
+  );
+
+  const currentItem = allNavItems.find((n) => n.id === activeSection) || visibleNavItems[0];
 
   return (
     <div className="app-shell">
@@ -85,7 +106,7 @@ export default function WorkspaceShell({
           </div>
         </div>
 
-        {/* Workspace Monogram Block */}
+        {/* Workspace Account Monogram Block */}
         <div className="workspace-label">
           <strong>{currentUser.name}</strong>
           <span className="text-[12px] text-slate-500 font-mono truncate block">
@@ -93,22 +114,40 @@ export default function WorkspaceShell({
           </span>
         </div>
 
-        {/* Role's Single Exclusive Navigation Item */}
+        {/* Navigation Section */}
         <nav className="flex flex-col gap-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">
-            Designated Dashboard
+            {isAdministrator ? 'System Navigation' : 'Assigned Station'}
           </span>
-          <div className="nav-link active">
-            <CurrentIcon className="h-4 w-4 shrink-0 text-blue-700" />
-            <span className="font-semibold">{currentConfig.label}</span>
-          </div>
+
+          {visibleNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSectionChange(item.id)}
+                className={`nav-link text-left w-full flex items-center justify-between ${
+                  isActive ? 'active' : ''
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </div>
+              </button>
+            );
+          })}
         </nav>
 
         {/* Sidebar Middle Note */}
         <div className="sidebar-footer">
-          <strong>Access Scope</strong>
+          <strong>Role Authority</strong>
           <p className="text-xs text-slate-600 mt-1">
-            {currentConfig.scope}
+            {isAdministrator
+              ? 'Administrator has full visibility across all 3 source systems and target warehouse.'
+              : `Signed in as ${currentUser.role}. Restricted strictly to assigned operational station.`}
           </p>
         </div>
 
@@ -116,8 +155,8 @@ export default function WorkspaceShell({
         <div className="mt-4 pt-3 border-t border-slate-200 flex items-center gap-2 text-xs text-slate-500">
           <Database className="h-3.5 w-3.5 text-slate-400" />
           <div>
-            <span className="font-semibold text-slate-700">PostgreSQL Database</span>
-            <div className="text-[11px] text-slate-400">Fitness Health Data Warehouse</div>
+            <span className="font-semibold text-slate-700">PostgreSQL Warehouse</span>
+            <div className="text-[11px] text-slate-400">Fitness Health Data Integration</div>
           </div>
         </div>
       </aside>
@@ -129,14 +168,14 @@ export default function WorkspaceShell({
           <div className="topbar-breadcrumbs">
             <span>Workspace</span>
             <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <strong>{currentConfig.label}</strong>
+            <strong>{currentItem ? currentItem.label : 'Dashboard'}</strong>
           </div>
 
           <div className="topbar-controls">
             {/* Authenticated Account Profile */}
             <div className="flex items-center gap-2 text-xs">
               <span className="font-semibold text-slate-800 hidden md:inline">{currentUser.name}</span>
-              <span className="status-pill neutral font-mono">{currentUser.role}</span>
+              <span className="status-pill neutral font-mono font-bold">{currentUser.role}</span>
             </div>
 
             {/* Sign Out Button */}

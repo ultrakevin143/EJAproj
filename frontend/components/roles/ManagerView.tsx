@@ -83,6 +83,53 @@ export default function ManagerView() {
         </button>
       </div>
 
+      {/* System Integration Flow Map */}
+      <div className="form-card mb-6 bg-slate-50 border-slate-200">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
+          <strong className="text-xs uppercase tracking-wider text-slate-600 font-bold">
+            End-to-End System Flow (Fitness Health Data Integration)
+          </strong>
+          <span className="text-xs text-blue-800 font-semibold">5-Stage Architecture</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
+          <div className="p-3 bg-white rounded border border-slate-200">
+            <span className="text-[11px] font-bold text-blue-700 block mb-1">1. Member Intake CRM</span>
+            <strong className="text-slate-800 block text-xs">Source 1: Front-Desk</strong>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Member registers. Initial safety status defaults to Restricted pending PAR-Q.
+            </p>
+          </div>
+          <div className="p-3 bg-white rounded border border-slate-200">
+            <span className="text-[11px] font-bold text-emerald-700 block mb-1">2. Health Screening</span>
+            <strong className="text-slate-800 block text-xs">Source 2: Clinic Station</strong>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Doctor conducts PAR-Q and measures resting HR. Flags cardiac risk (e.g. &gt;100 BPM).
+            </p>
+          </div>
+          <div className="p-3 bg-white rounded border border-slate-200">
+            <span className="text-[11px] font-bold text-purple-700 block mb-1">3. Facility Turnstile IoT</span>
+            <strong className="text-slate-800 block text-xs">Source 3: IoT RFID Gates</strong>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Machine queries warehouse: unlocks if Cleared; locks immediately if Flagged.
+            </p>
+          </div>
+          <div className="p-3 bg-white rounded border border-slate-200">
+            <span className="text-[11px] font-bold text-amber-700 block mb-1">4. Data Steward ETL</span>
+            <strong className="text-slate-800 block text-xs">DQM Cleaning Engine</strong>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Normalizes dirty dates, expands &apos;Clrd&apos;, and manages single-name review queue.
+            </p>
+          </div>
+          <div className="p-3 bg-white rounded border border-slate-200">
+            <span className="text-[11px] font-bold text-slate-800 block mb-1">5. Consolidated 360</span>
+            <strong className="text-slate-800 block text-xs">PostgreSQL Warehouse</strong>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Single unified profile driving member health safety and club operations.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Summary Metrics Strip */}
       <dl className="dashboard-summary">
         <div>
