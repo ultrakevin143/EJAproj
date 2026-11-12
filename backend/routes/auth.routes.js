@@ -46,6 +46,14 @@ const DEMO_ACCOUNTS = {
     role: 'MANAGER',
     title: 'General Manager & Head of Operations',
     description: 'Strategic BI 360 overview, risk KPIs, and operations monitoring.'
+  },
+  'admin@fitquality.local': {
+    id: 'usr_admin_01',
+    email: 'admin@fitquality.local',
+    name: 'Engr. Ricardo Mendoza (Administrator)',
+    role: 'MANAGER',
+    title: 'System Administrator & General Manager',
+    description: 'Highest administrative authority over club operations, security, and warehouse analytics.'
   }
 };
 

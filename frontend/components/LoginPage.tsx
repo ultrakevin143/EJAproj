@@ -15,11 +15,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const demoAccounts = [
+    { email: 'admin@fitquality.local', label: 'Engr. Ricardo Mendoza (Administrator / GM)', role: 'ADMIN' },
+    { email: 'steward@fitquality.local', label: 'Danilo Fernandez (Lead Data Steward)', role: 'STEWARD' },
     { email: 'frontdesk@fitquality.local', label: 'Marites Dela Cruz (Front-Desk Officer)', role: 'FRONTDESK' },
     { email: 'clinic@fitquality.local', label: 'Dr. Maria Elena Reyes, MD (Clinical Assessor)', role: 'CLINIC' },
-    { email: 'turnstile@fitquality.local', label: 'Turnstile Gate 01 (BGC Gym Floor)', role: 'TURNSTILE' },
-    { email: 'steward@fitquality.local', label: 'Danilo Fernandez (Lead Data Steward)', role: 'STEWARD' },
-    { email: 'manager@fitquality.local', label: 'Engr. Ricardo Mendoza, GM (Executive 360)', role: 'MANAGER' }
+    { email: 'turnstile@fitquality.local', label: 'Turnstile Gate 01 (BGC Gym Floor)', role: 'TURNSTILE' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
