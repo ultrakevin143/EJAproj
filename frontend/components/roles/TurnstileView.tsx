@@ -1,24 +1,39 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DoorClosed, CheckCircle2, AlertOctagon, Clock, RefreshCw, KeyRound, Radio } from 'lucide-react';
+import { Radio, CheckCircle2, XCircle, AlertTriangle, RefreshCw, ShieldAlert, ArrowRight } from 'lucide-react';
+
+interface ScanItem {
+  checkin_id: string;
+  member_id: string;
+  scan_time: string;
+  facility_zone: string;
+  access_granted: boolean;
+  denial_reason: string | null;
+}
 
 export default function TurnstileView() {
-  const [badgeId, setBadgeId] = useState('MBR-1001');
-  const [zone, setZone] = useState('Main Gym Floor');
+  const [recentScans, setRecentScans] = useState<ScanItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Scanning Station State
+  const [memberId, setMemberId] = useState('MBR-1151');
+  const [facilityZone, setFacilityZone] = useState('High-Intensity Training Area');
+  const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [recentScans, setRecentScans] = useState<any[]>([]);
 
   const fetchRecentScans = async () => {
     try {
+      setLoading(true);
       const res = await fetch('http://localhost:3000/api/roles/turnstile/recent-scans');
       const data = await res.json();
       if (data.success) {
         setRecentScans(data.scans || []);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error('Failed to load recent turnstile scans:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -26,254 +41,265 @@ export default function TurnstileView() {
     fetchRecentScans();
   }, []);
 
-  const handleScan = async (idToScan?: string) => {
-    const id = idToScan || badgeId;
-    if (!id.trim()) return;
+  const handleSimulateScan = async (overrideId?: string) => {
+    const targetId = overrideId || memberId;
+    if (!targetId) return;
 
-    setIsScanning(true);
+    setScanning(true);
     setScanResult(null);
-
     try {
       const res = await fetch('http://localhost:3000/api/roles/turnstile/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          member_id: id.trim().toUpperCase(),
-          facility_zone: zone
+          member_id: targetId.trim(),
+          facility_zone: facilityZone
         })
       });
       const data = await res.json();
-      if (data.success) {
-        setScanResult(data);
-        fetchRecentScans();
-      }
-    } catch (e) {
-      console.error(e);
+      setScanResult(data);
+      fetchRecentScans();
+    } catch (err) {
+      setScanResult({
+        accessGranted: false,
+        denialReason: 'Turnstile IoT communication timeout with warehouse'
+      });
     } finally {
-      setIsScanning(false);
+      setScanning(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      {/* Page Heading */}
+      <div className="page-heading">
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="bg-indigo-500/20 text-indigo-300 text-xs font-semibold px-2 py-0.5 rounded border border-indigo-500/30">
-              Role: Turnstile Gate IoT System (Machine Account)
-            </span>
-            <span className="text-slate-400 text-xs">• Source 3 Domain: RFID Gate Scans</span>
-          </div>
-          <h1 className="text-xl font-bold mt-1.5 text-white">Facility Turnstile Access Gate Simulator</h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Real-time physical gate control checking integrated PostgreSQL Member 360 clearance status before unlocking turnstile.
+          <h1>Facility IoT RFID Turnstile Terminal</h1>
+          <p>
+            Automated machine-to-machine check-in scanner. Queries the integrated warehouse to unlock physical barriers in real time.
           </p>
         </div>
-
-        <button
-          onClick={fetchRecentScans}
-          className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          <span>Refresh Scan Log</span>
+        <button onClick={fetchRecentScans} className="btn btn-secondary">
+          <RefreshCw className="h-4 w-4" />
+          <span>Refresh Scan Feed</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Tap RFID Keycard Simulator */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center space-x-2 text-slate-800 font-bold text-xs border-b border-slate-100 pb-2">
-              <Radio className="h-4 w-4 text-indigo-600 animate-pulse" />
-              <span>RFID Keycard Scanner Terminal</span>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Select Facility Zone</label>
-                <select
-                  value={zone}
-                  onChange={(e) => setZone(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg p-2 bg-white"
-                >
-                  <option value="Main Gym Floor">Main Gym Floor (General Workout)</option>
-                  <option value="Cardio Deck">Cardio Deck</option>
-                  <option value="Swimming Pool">Swimming Pool & Sauna</option>
-                  <option value="CrossFit Box">CrossFit High-Intensity Box</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Enter Member Badge ID</label>
-                <input
-                  type="text"
-                  value={badgeId}
-                  onChange={(e) => setBadgeId(e.target.value)}
-                  placeholder="e.g. MBR-1001"
-                  className="w-full border border-slate-200 rounded-lg p-2 font-mono uppercase text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                />
-              </div>
-
-              {/* Fast test buttons */}
-              <div className="pt-1">
-                <span className="text-[11px] text-slate-400 block mb-1 font-medium">Quick Demo Test Badges:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { id: 'MBR-1001', label: 'MBR-1001' },
-                    { id: 'MBR-1002', label: 'MBR-1002' },
-                    { id: 'MBR-1003', label: 'MBR-1003' },
-                    { id: 'MBR-9999', label: 'MBR-9999 (Unregistered)' }
-                  ].map((btn) => (
-                    <button
-                      key={btn.id}
-                      type="button"
-                      onClick={() => {
-                        setBadgeId(btn.id);
-                        handleScan(btn.id);
-                      }}
-                      className="px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-mono font-medium text-slate-700"
-                    >
-                      {btn.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleScan()}
-                disabled={isScanning || !badgeId.trim()}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 transition duration-150 disabled:opacity-50 mt-2 shadow-sm"
-              >
-                <KeyRound className="h-4 w-4" />
-                <span>{isScanning ? 'Interrogating Database...' : 'TAP RFID BADGE AT GATE'}</span>
-              </button>
-            </div>
-
-            {/* Visual Gate Output Screen */}
-            {scanResult && (
-              <div
-                className={`p-4 rounded-xl border text-xs space-y-2 mt-4 animate-fade-in ${
-                  scanResult.accessGranted
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
-                    : 'bg-rose-50 border-rose-300 text-rose-950'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm flex items-center space-x-1.5">
-                    {scanResult.accessGranted ? (
-                      <>
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                        <span className="text-emerald-800">TURNSTILE UNLOCKED: ACCESS GRANTED</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertOctagon className="h-5 w-5 text-rose-600" />
-                        <span className="text-rose-800">GATE LOCKED: ACCESS DENIED</span>
-                      </>
-                    )}
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-500">{scanResult.scanId}</span>
-                </div>
-
-                {scanResult.accessGranted ? (
-                  <div className="text-xs text-emerald-900 pt-1 space-y-1">
-                    <div>Welcome, <strong>{scanResult.member?.full_name}</strong>!</div>
-                    <div className="text-[11px] text-emerald-700">
-                      PAR-Q Health Clearance: <strong>{scanResult.member?.parq_status}</strong> • Zone: <strong>{scanResult.facility_zone}</strong>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-xs text-rose-900 pt-1 space-y-1">
-                    <div className="font-semibold">{scanResult.denialReason}</div>
-                    {scanResult.member && (
-                      <div className="text-[11px] text-rose-700">
-                        Member: <strong>{scanResult.member.full_name}</strong> • Clearance: <strong>{scanResult.member.safety_clearance_status}</strong>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+      {/* Summary Metrics Strip */}
+      <dl className="dashboard-summary">
+        <div>
+          <dt>Total Logged Gate Scans</dt>
+          <dd className="tabular-nums">{recentScans.length}</dd>
+          <span>Source 3: Facility Turnstile IoT</span>
         </div>
+        <div>
+          <dt>Access Granted (Unlocked)</dt>
+          <dd className="tabular-nums text-emerald-700">
+            {recentScans.filter((s) => s.access_granted).length}
+          </dd>
+          <span>Active clearance verified</span>
+        </div>
+        <div>
+          <dt>Access Denied (Locked)</dt>
+          <dd className="tabular-nums text-red-700">
+            {recentScans.filter((s) => !s.access_granted).length}
+          </dd>
+          <span>Flagged or unassessed members</span>
+        </div>
+        <div>
+          <dt>Machine IoT Authority</dt>
+          <dd className="text-sm font-semibold text-blue-900 mt-2">Zero Manual Override</dd>
+          <span>Strict warehouse status enforcement</span>
+        </div>
+      </dl>
 
-        {/* Right: Real-Time Gate Scan Logs */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-          <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+      {/* Interactive RFID Terminal Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Input Station */}
+        <div className="form-card">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
             <div>
-              <h2 className="text-xs font-bold text-slate-800">
-                Source 3: Real-Time Facility Turnstile Scan Logs
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                Audit log of live RFID turnstile scans persisted in PostgreSQL table <code>turnstile_scans</code>.
-              </p>
+              <h2 className="text-base font-bold text-slate-900">RFID Scanner Terminal #01</h2>
+              <p className="text-xs text-slate-500">Tap RFID keycard or simulate member arrival.</p>
             </div>
-            <span className="text-[11px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
-              Live Feed
+            <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded">
+              Machine ID: GATE_01
             </span>
           </div>
 
-          <div className="overflow-x-auto flex-1 max-h-[520px] overflow-y-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 sticky top-0 z-10">
+          <div className="space-y-4">
+            <div className="form-group">
+              <label>RFID Keycard / Member ID *</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={memberId}
+                  onChange={(e) => setMemberId(e.target.value)}
+                  placeholder="e.g. MBR-1151"
+                  className="flex-1 font-mono font-bold text-base"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSimulateScan()}
+                  disabled={scanning}
+                  className="btn btn-primary"
+                >
+                  <Radio className="h-4 w-4" />
+                  <span>{scanning ? 'Reading...' : 'Tap RFID Badge'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Facility Zone Access Gate</label>
+              <select
+                value={facilityZone}
+                onChange={(e) => setFacilityZone(e.target.value)}
+              >
+                <option value="Main Gym Floor">Main Gym Floor</option>
+                <option value="High-Intensity Training Area">High-Intensity Training Area (Strict PAR-Q)</option>
+                <option value="Cardio &amp; Treadmills">Cardio &amp; Treadmills</option>
+                <option value="Sauna &amp; Spa Zone">Sauna &amp; Spa Zone</option>
+                <option value="Swimming Pool">Swimming Pool</option>
+              </select>
+            </div>
+
+            {/* Quick Demo Test Buttons */}
+            <div className="pt-2 border-t border-slate-200">
+              <span className="text-xs font-semibold text-slate-500 block mb-2">Classroom Demo Test Scenarios:</span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMemberId('MBR-1151');
+                    handleSimulateScan('MBR-1151');
+                  }}
+                  className="btn btn-secondary text-xs px-2.5 py-1 text-red-700 hover:bg-red-50 border-red-200"
+                >
+                  Scan Marcus Vance (Flagged)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMemberId('MBR-1001');
+                    handleSimulateScan('MBR-1001');
+                  }}
+                  className="btn btn-secondary text-xs px-2.5 py-1 text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                >
+                  Scan MBR-1001 (Cleared)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMemberId('MBR-9999');
+                    handleSimulateScan('MBR-9999');
+                  }}
+                  className="btn btn-secondary text-xs px-2.5 py-1 text-amber-700 hover:bg-amber-50 border-amber-200"
+                >
+                  Scan MBR-9999 (Unregistered Orphan)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Real-time Physical Barrier Display */}
+        <div className="form-card flex flex-col justify-center">
+          <div className="mb-4 pb-3 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900">Physical Barrier Gate Status</h2>
+            <span className="text-xs font-mono text-slate-400">Response: &lt;5ms</span>
+          </div>
+
+          {!scanResult ? (
+            <div className="py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">
+              <Radio className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+              <p className="text-sm font-medium">Ready for RFID Tap</p>
+              <span className="text-xs text-slate-400">Scanner active at {facilityZone}</span>
+            </div>
+          ) : scanResult.accessGranted ? (
+            <div className="p-6 rounded-lg bg-emerald-50 border-2 border-emerald-300 text-center">
+              <div className="inline-flex p-3 rounded-full bg-emerald-100 text-emerald-700 mb-3">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold text-emerald-900 mb-1">ACCESS GRANTED</h3>
+              <p className="text-sm font-semibold text-emerald-800 mb-3">Barrier Unlocked • Enjoy Your Workout</p>
+              <div className="text-xs text-emerald-800 bg-white/70 p-3 rounded border border-emerald-200 max-w-sm mx-auto text-left space-y-1">
+                <div><strong>Member:</strong> {scanResult.member?.full_name} ({scanResult.member?.member_id})</div>
+                <div><strong>Health Clearance:</strong> ACTIVE_CLEARANCE</div>
+                <div><strong>Zone:</strong> {scanResult.facility_zone}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 rounded-lg bg-red-50 border-2 border-red-300 text-center">
+              <div className="inline-flex p-3 rounded-full bg-red-100 text-red-700 mb-3">
+                <XCircle className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold text-red-900 mb-1">ACCESS DENIED</h3>
+              <p className="text-sm font-semibold text-red-800 mb-3">Barrier Locked • Entry Prohibited</p>
+              <div className="text-xs text-red-900 bg-white/80 p-3 rounded border border-red-200 max-w-sm mx-auto text-left space-y-1.5">
+                <div><strong>Denial Reason:</strong> {scanResult.denialReason}</div>
+                {scanResult.member && (
+                  <div><strong>Member:</strong> {scanResult.member.full_name} ({scanResult.member.member_id})</div>
+                )}
+                <div className="pt-1 text-[11px] text-red-700 border-t border-red-200">
+                  Please report to the Front Desk or Clinic Station for health re-evaluation.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Live Turnstile Audit Feed Table */}
+      <div className="data-table-container">
+        <div className="table-toolbar">
+          <strong className="text-sm text-slate-800">Turnstile Scan Audit Log (Source 3)</strong>
+          <span className="text-xs text-slate-500 tabular-nums">Showing latest {recentScans.length} events</span>
+        </div>
+
+        <div className="table-scroll">
+          <table className="enterprise-table">
+            <thead>
+              <tr>
+                <th>Scan ID</th>
+                <th>Member ID</th>
+                <th>Scan Timestamp</th>
+                <th>Facility Zone</th>
+                <th>Barrier Decision</th>
+                <th>Denial Reason / Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentScans.length === 0 ? (
                 <tr>
-                  <th className="py-2.5 px-3">Scan ID</th>
-                  <th className="py-2.5 px-3">Member ID</th>
-                  <th className="py-2.5 px-3">Member Name</th>
-                  <th className="py-2.5 px-3">Zone</th>
-                  <th className="py-2.5 px-3">Gate Outcome</th>
-                  <th className="py-2.5 px-3">Scan Time</th>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    No turnstile scans recorded yet.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {recentScans.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-400">
-                      No scans logged yet. Tap an RFID badge above!
+              ) : (
+                recentScans.slice(0, 15).map((scan) => (
+                  <tr key={scan.checkin_id}>
+                    <td className="font-mono text-xs font-semibold text-slate-700">{scan.checkin_id}</td>
+                    <td className="font-mono text-xs font-semibold text-slate-900">{scan.member_id}</td>
+                    <td className="tabular-nums text-xs text-slate-500">{scan.scan_time}</td>
+                    <td className="text-xs text-slate-700">{scan.facility_zone}</td>
+                    <td>
+                      {scan.access_granted ? (
+                        <span className="status-pill positive">GRANTED</span>
+                      ) : (
+                        <span className="status-pill negative">DENIED</span>
+                      )}
+                    </td>
+                    <td className="text-xs text-slate-600 max-w-xs truncate">
+                      {scan.denial_reason || 'Safety cleared — normal entry'}
                     </td>
                   </tr>
-                ) : (
-                  recentScans.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-2.5 px-3 font-mono text-slate-600 text-[11px]">
-                        {s.checkin_id || s.id.slice(0, 8)}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                        {s.member_id}
-                      </td>
-                      <td className="py-2.5 px-3 font-medium text-slate-800">
-                        {s.full_name || <em className="text-slate-400">Unregistered</em>}
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-600 text-[11px]">
-                        {s.facility_zone}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        {s.access_granted ? (
-                          <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px] inline-flex items-center space-x-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>GRANTED</span>
-                          </span>
-                        ) : (
-                          <span className="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[10px] inline-flex items-center space-x-1" title={s.denial_reason}>
-                            <AlertOctagon className="h-3 w-3" />
-                            <span>DENIED</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-slate-400 text-[10px]">
-                        {new Date(s.scan_time).toLocaleTimeString()}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
-

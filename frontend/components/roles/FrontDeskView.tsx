@@ -1,38 +1,47 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Search, CheckCircle2, AlertOctagon, Clock, User, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Search, UserPlus, CheckCircle2, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
+
+interface Member {
+  member_id: string;
+  full_name: string;
+  dob: string;
+  email: string;
+  membership_tier: string;
+}
 
 export default function FrontDeskView() {
-  const [members, setMembers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // New Member Form
+
+  // Form State
+  const [memberId, setMemberId] = useState('MBR-1152');
   const [fullName, setFullName] = useState('');
   const [dob, setDob] = useState('');
   const [email, setEmail] = useState('');
-  const [tier, setTier] = useState('Standard');
-  const [formMsg, setFormMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [membershipTier, setMembershipTier] = useState('Standard');
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Quick Keycard Lookup
-  const [lookupId, setLookupId] = useState('');
+  // Clearance Check State
+  const [checkId, setCheckId] = useState('MBR-1151');
   const [clearanceResult, setClearanceResult] = useState<any | null>(null);
-  const [lookupLoading, setLookupLoading] = useState(false);
+  const [checkingClearance, setCheckingClearance] = useState(false);
 
   const fetchMembers = async () => {
-    setIsLoading(true);
     try {
+      setLoading(true);
       const res = await fetch('http://localhost:3000/api/roles/frontdesk/members');
       const data = await res.json();
       if (data.success) {
         setMembers(data.members || []);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error('Failed to load members:', err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -42,329 +51,332 @@ export default function FrontDeskView() {
 
   const handleEnroll = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim()) return;
+    if (!memberId || !fullName) return;
 
-    setIsSubmitting(true);
-    setFormMsg(null);
-
+    setSubmitting(true);
+    setFeedback(null);
     try {
       const res = await fetch('http://localhost:3000/api/roles/frontdesk/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          member_id: memberId,
           full_name: fullName,
           dob,
           email,
-          membership_tier: tier
+          membership_tier: membershipTier
         })
       });
       const data = await res.json();
-
       if (data.success) {
-        setFormMsg({ text: `Member enrolled with ID: ${data.member.member_id}`, type: 'success' });
+        setFeedback({ type: 'success', message: data.message });
+        setMemberId(`MBR-${Math.floor(1150 + Math.random() * 850)}`);
         setFullName('');
-        setDob('');
         setEmail('');
+        setDob('');
         fetchMembers();
       } else {
-        setFormMsg({ text: data.error || 'Enrollment failed', type: 'error' });
+        setFeedback({ type: 'error', message: data.error || 'Failed to enroll member' });
       }
-    } catch (err: any) {
-      setFormMsg({ text: err.message, type: 'error' });
+    } catch (err) {
+      setFeedback({ type: 'error', message: 'Network error connecting to backend' });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  const handleLookup = async (idToLookup?: string) => {
-    const id = idToLookup || lookupId;
-    if (!id.trim()) return;
-
-    setLookupLoading(true);
-    setClearanceResult(null);
-
+  const handleCheckClearance = async () => {
+    if (!checkId) return;
+    setCheckingClearance(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/roles/frontdesk/clearance/${id.trim()}`);
+      const res = await fetch(`http://localhost:3000/api/roles/frontdesk/clearance/${checkId.trim()}`);
       const data = await res.json();
       if (data.success) {
         setClearanceResult(data.member);
       } else {
-        setClearanceResult({ notFound: true, message: data.error });
+        setClearanceResult({ error: data.error });
       }
-    } catch (e) {
-      setClearanceResult({ notFound: true, message: 'Lookup error' });
+    } catch (err) {
+      setClearanceResult({ error: 'Connection error' });
     } finally {
-      setLookupLoading(false);
+      setCheckingClearance(false);
     }
   };
 
-  const filteredMembers = members.filter(m =>
-    m.member_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMembers = members.filter((m) =>
+    m.member_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      {/* Page Heading */}
+      <div className="page-heading">
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded border border-emerald-500/30">
-              Role: Front-Desk Receptionist
-            </span>
-            <span className="text-slate-400 text-xs">• Source 1 Domain: CRM Intake</span>
-          </div>
-          <h1 className="text-xl font-bold mt-1.5 text-white">Member Registration & Intake Desk</h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Manage front-desk registrations and inspect entry clearance status without accessing confidential clinical files.
-          </p>
+          <h1>Member Intake &amp; Front-Desk CRM</h1>
+          <p>Register new club members and verify keycard safety clearance before physical entry.</p>
         </div>
-
-        <button
-          onClick={fetchMembers}
-          disabled={isLoading}
-          className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+        <button onClick={fetchMembers} className="btn btn-secondary">
+          <RefreshCw className="h-4 w-4" />
           <span>Refresh Records</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Quick Clearance Lookup + Enroll Form */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Quick Clearance Checker */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
-            <div className="flex items-center space-x-2 text-slate-800 font-bold text-xs border-b border-slate-100 pb-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              <span>Front-Desk Member Badge Clearance Lookup</span>
+      {/* Summary Metrics Strip */}
+      <dl className="dashboard-summary">
+        <div>
+          <dt>Total Enrolled Members</dt>
+          <dd className="tabular-nums">{members.length}</dd>
+          <span>Source 1: Front-Desk CRM Table</span>
+        </div>
+        <div>
+          <dt>VIP Memberships</dt>
+          <dd className="tabular-nums">{members.filter((m) => m.membership_tier.includes('VIP')).length}</dd>
+          <span>All-access priority tier</span>
+        </div>
+        <div>
+          <dt>Standard Memberships</dt>
+          <dd className="tabular-nums">{members.filter((m) => m.membership_tier === 'Standard').length}</dd>
+          <span>Standard floor access</span>
+        </div>
+        <div>
+          <dt>HIPAA/GDPR Security Boundary</dt>
+          <dd className="text-sm font-semibold text-blue-900 mt-2">Active Isolation</dd>
+          <span>Clinical records hidden from reception</span>
+        </div>
+      </dl>
+
+      {/* Grid: Registration Form + Clearance Quick Check */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Registration Card (2 cols) */}
+        <div className="lg:col-span-2 form-card">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Enroll New Club Member</h2>
+              <p className="text-xs text-slate-500">Inputs populate Source 1 (CRM) in PostgreSQL warehouse.</p>
             </div>
-
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                placeholder="e.g. MBR-1001"
-                value={lookupId}
-                onChange={(e) => setLookupId(e.target.value)}
-                className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono uppercase focus:outline-none focus:ring-1 focus:ring-slate-400"
-              />
-              <button
-                onClick={() => handleLookup()}
-                disabled={lookupLoading}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
-              >
-                Check
-              </button>
-            </div>
-
-            {clearanceResult && (
-              <div className="pt-2 border-t border-slate-100">
-                {clearanceResult.notFound ? (
-                  <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
-                    {clearanceResult.message || 'Member ID not found in database.'}
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-lg border text-xs space-y-2 bg-slate-50 border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">{clearanceResult.full_name}</span>
-                      <span className="font-mono text-[11px] text-slate-500">{clearanceResult.member_id}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-slate-500 text-[11px]">Turnstile Clearance:</span>
-                      {clearanceResult.safety_clearance_status === 'ACTIVE_CLEARANCE' ? (
-                        <span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]">
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>CLEAR TO ENTER</span>
-                        </span>
-                      ) : clearanceResult.safety_clearance_status === 'BLOCKED_MEDICAL_FLAG' ? (
-                        <span className="inline-flex items-center space-x-1 bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[11px]">
-                          <AlertOctagon className="h-3 w-3" />
-                          <span>BLOCKED - MEDICAL FLAG</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center space-x-1 bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[11px]">
-                          <Clock className="h-3 w-3" />
-                          <span>RESTRICTED - PENDING PAR-Q</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="text-[10px] text-slate-400 italic pt-1">
-                      *Note: Clinical screening diagnosis details are restricted from front-desk staff.
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded">
+              Role: FRONT_DESK
+            </span>
           </div>
 
-          {/* New Member Enrollment Form */}
-          <form onSubmit={handleEnroll} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
-            <div className="flex items-center space-x-2 text-slate-800 font-bold text-xs border-b border-slate-100 pb-2">
-              <UserPlus className="h-4 w-4 text-emerald-600" />
-              <span>Enroll New Member (Source 1 Intake)</span>
+          {feedback && (
+            <div
+              className={`p-3 rounded-md mb-4 text-xs font-medium flex items-center gap-2 ${
+                feedback.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+              }`}
+            >
+              {feedback.type === 'success' ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+              )}
+              <span>{feedback.message}</span>
             </div>
+          )}
 
-            {formMsg && (
-              <div
-                className={`p-2.5 rounded-lg text-xs ${
-                  formMsg.type === 'success'
-                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-                    : 'bg-rose-50 border border-rose-200 text-rose-800'
-                }`}
-              >
-                {formMsg.text}
-              </div>
-            )}
-
-            <div className="space-y-2 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Full Legal Name *</label>
+          <form onSubmit={handleEnroll}>
+            <div className="form-grid mb-4">
+              <div className="form-group">
+                <label>Member ID *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Jordan Miller"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  value={memberId}
+                  onChange={(e) => setMemberId(e.target.value)}
+                  placeholder="MBR-1152"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Date of Birth</label>
+              <div className="form-group">
+                <label>Full Legal Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Marcus Vance"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Date of Birth</label>
                 <input
                   type="date"
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-slate-400"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Contact Email</label>
+              <div className="form-group">
+                <label>Email Address</label>
                 <input
                   type="email"
-                  placeholder="jordan.miller@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  placeholder="marcus.vance@example.com"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Membership Tier</label>
+              <div className="form-group lg:col-span-2">
+                <label>Membership Tier</label>
                 <select
-                  value={tier}
-                  onChange={(e) => setTier(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg p-2 bg-white"
+                  value={membershipTier}
+                  onChange={(e) => setMembershipTier(e.target.value)}
                 >
-                  <option value="Standard">Standard Gym Floor</option>
-                  <option value="Premium">Premium Access (Includes Classes)</option>
-                  <option value="VIP All-Access">VIP All-Access (Pool, Spa & Private Box)</option>
+                  <option value="Standard">Standard Tier</option>
+                  <option value="Premium">Premium Tier</option>
+                  <option value="VIP All-Access">VIP All-Access Tier</option>
                 </select>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-3 rounded-lg text-xs transition duration-150 disabled:opacity-50 mt-2"
-            >
-              {isSubmitting ? 'Registering...' : 'Register Member & Sync DB'}
-            </button>
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-xs text-slate-500">New members default to RESTRICTED pending clinical PAR-Q.</span>
+              <button type="submit" disabled={submitting} className="btn btn-primary">
+                <UserPlus className="h-4 w-4" />
+                <span>{submitting ? 'Enrolling...' : 'Enroll Member'}</span>
+              </button>
+            </div>
           </form>
         </div>
 
-        {/* Right Column: CRM Registered Members Database Table */}
-        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-          <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-xs font-bold text-slate-800">
-                Source 1: Front-Desk CRM Members Table
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                Live membership intake records stored in PostgreSQL.
-              </p>
+        {/* Badge Clearance Quick Checker (1 col) */}
+        <div className="form-card flex flex-col justify-between">
+          <div>
+            <div className="mb-4 pb-3 border-b border-slate-200">
+              <h2 className="text-base font-bold text-slate-900">Check Keycard Clearance</h2>
+              <p className="text-xs text-slate-500">Query integrated warehouse without exposing clinical notes.</p>
             </div>
 
-            <div className="relative w-full sm:w-56">
-              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search member or ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none"
-              />
+            <div className="form-group mb-3">
+              <label>Member ID</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={checkId}
+                  onChange={(e) => setCheckId(e.target.value)}
+                  placeholder="e.g. MBR-1151"
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleCheckClearance}
+                  disabled={checkingClearance}
+                  className="btn btn-secondary px-3"
+                >
+                  {checkingClearance ? 'Checking...' : 'Check'}
+                </button>
+              </div>
             </div>
+
+            {clearanceResult && (
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-md mt-3">
+                {clearanceResult.error ? (
+                  <div className="text-xs text-red-600 font-medium">{clearanceResult.error}</div>
+                ) : (
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Name:</span>
+                      <strong className="text-slate-900">{clearanceResult.full_name}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Tier:</span>
+                      <span className="font-semibold text-slate-700">{clearanceResult.membership_tier}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                      <span className="text-slate-500">Safety Status:</span>
+                      <span
+                        className={`status-pill ${
+                          clearanceResult.safety_clearance_status === 'ACTIVE_CLEARANCE'
+                            ? 'positive'
+                            : clearanceResult.safety_clearance_status === 'BLOCKED_MEDICAL_FLAG'
+                            ? 'negative'
+                            : 'warning'
+                        }`}
+                      >
+                        {clearanceResult.safety_clearance_status || 'RESTRICTED'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="overflow-x-auto flex-1 max-h-[580px] overflow-y-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 sticky top-0 z-10">
+          <div className="mt-4 p-2.5 bg-slate-50 rounded border border-slate-200 text-[11px] text-slate-500">
+            <strong>Reception Notice:</strong> If safety status is BLOCKED or RESTRICTED, direct member to the club clinic for PAR-Q assessment.
+          </div>
+        </div>
+      </div>
+
+      {/* Members Directory Table */}
+      <div className="data-table-container">
+        <div className="table-toolbar">
+          <div className="search-input">
+            <Search className="h-4 w-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search members by name, ID, or email..."
+            />
+          </div>
+          <span className="text-xs text-slate-500 tabular-nums">
+            Showing {filteredMembers.length} of {members.length} members
+          </span>
+        </div>
+
+        <div className="table-scroll">
+          <table className="enterprise-table">
+            <thead>
+              <tr>
+                <th>Member ID</th>
+                <th>Full Name</th>
+                <th>Date of Birth</th>
+                <th>Email Address</th>
+                <th>Membership Tier</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMembers.length === 0 ? (
                 <tr>
-                  <th className="py-2.5 px-3">Member ID</th>
-                  <th className="py-2.5 px-3">Full Legal Name</th>
-                  <th className="py-2.5 px-3">DOB</th>
-                  <th className="py-2.5 px-3">Email</th>
-                  <th className="py-2.5 px-3">Tier</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    No matching member records found.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredMembers.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-400">
-                      No members match search.
+              ) : (
+                filteredMembers.slice(0, 15).map((m) => (
+                  <tr key={m.member_id}>
+                    <td className="font-mono text-xs font-semibold text-slate-800">{m.member_id}</td>
+                    <td className="font-medium text-slate-900">{m.full_name}</td>
+                    <td className="tabular-nums text-slate-600">{m.dob || '—'}</td>
+                    <td className="text-slate-600 text-xs">{m.email}</td>
+                    <td>
+                      <span className="status-pill neutral">{m.membership_tier}</span>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => {
+                          setCheckId(m.member_id);
+                          handleCheckClearance();
+                        }}
+                        className="text-xs text-blue-700 hover:underline font-semibold"
+                      >
+                        Verify Clearance
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  filteredMembers.map((m) => (
-                    <tr key={m.member_id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                        {m.member_id}
-                      </td>
-                      <td className="py-2.5 px-3 font-semibold text-slate-800">
-                        {m.full_name}
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-slate-600">
-                        {m.dob || <em className="text-slate-400">&lt;missing&gt;</em>}
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-600 truncate max-w-[150px]">
-                        {m.email}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] px-2 py-0.5 rounded font-medium">
-                          {m.membership_tier}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-right">
-                        <button
-                          onClick={() => {
-                            setLookupId(m.member_id);
-                            handleLookup(m.member_id);
-                          }}
-                          className="text-[11px] text-emerald-700 hover:text-emerald-800 font-semibold"
-                        >
-                          Check Badge
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between">
-            <span>Showing {filteredMembers.length} member profiles</span>
-            <span>PostgreSQL: <code>crm_members</code></span>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
-
