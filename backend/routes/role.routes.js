@@ -303,6 +303,14 @@ router.get('/manager/overview', async (req, res) => {
        ORDER BY ts.scan_time DESC LIMIT 10`
     );
 
+    const zoneRes = await query(
+      `SELECT facility_zone, COUNT(*) as count FROM turnstile_scans GROUP BY facility_zone ORDER BY count DESC`
+    );
+    const zoneBreakdown = zoneRes.rows.map(r => ({
+      zone: r.facility_zone,
+      scans: Number(r.count)
+    }));
+
     return res.json({
       success: true,
       kpis: {
@@ -314,9 +322,11 @@ router.get('/manager/overview', async (req, res) => {
         highRiskCount,
         medRiskCount,
         lowRiskCount,
-        tierBreakdown
+        tierBreakdown,
+        zoneBreakdown
       },
       recentScans: recentScans.rows,
+      warehouse: dwRes.rows,
       members: dwRes.rows
     });
   } catch (err) {

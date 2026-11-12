@@ -11,10 +11,10 @@ interface SourceReceiptProps {
 }
 
 export default function SourceReceipt({
-  crmCount = 150,
-  clinicCount = 133,
-  turnstileCount = 296,
-  warehouseCount = 150
+  crmCount = 0,
+  clinicCount = 0,
+  turnstileCount = 0,
+  warehouseCount = 0
 }: SourceReceiptProps) {
   return (
     <div className="source-receipt" aria-label="Multi-source ingestion pipeline receipt">

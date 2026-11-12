@@ -11,6 +11,8 @@ const crypto = require('crypto');
 
 /**
  * Seed initial multi-source data if empty
+ * NOTE: The target data warehouse (integrated_members_360) is intentionally left
+ * EMPTY until the Data Steward clicks 'Run Multi-Source ETL Pipeline'!
  */
 async function seedMultiSourceIfEmpty(force = false) {
   try {
@@ -26,10 +28,10 @@ async function seedMultiSourceIfEmpty(force = false) {
       await query('DELETE FROM crm_members');
     }
 
-    console.log('🌱 Seeding multi-source tables with authentic Filipino datasets...');
+    console.log('🌱 Seeding multi-source raw tables with authentic Filipino datasets...');
     const { members, screenings, checkins } = generateMultiSourceDatasets(150);
 
-    // 1. Seed CRM Members
+    // 1. Seed CRM Members (Source 1)
     for (const m of members) {
       await query(
         `INSERT INTO crm_members (member_id, full_name, dob, email, membership_tier)
@@ -38,7 +40,7 @@ async function seedMultiSourceIfEmpty(force = false) {
       );
     }
 
-    // 2. Seed Clinic Screenings
+    // 2. Seed Clinic Screenings (Source 2)
     for (const s of screenings) {
       await query(
         `INSERT INTO clinic_screenings (id, member_id, parq_status, resting_heart_rate, assessment_date, medical_flag)
@@ -47,33 +49,18 @@ async function seedMultiSourceIfEmpty(force = false) {
       );
     }
 
-    // 3. Seed Turnstile Scans
+    // 3. Seed Turnstile Scans (Source 3)
     for (const c of checkins) {
       await query(
         `INSERT INTO turnstile_scans (id, checkin_id, member_id, scan_time, facility_zone, access_granted)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [crypto.randomUUID(), c.checkin_id, c.member_id, c.checkin_time, c.facility_zone, true]
+        [crypto.randomUUID(), c.checkin_id, c.member_id, c.scan_time, c.facility_zone, true]
       );
     }
 
-    // 4. Run initial ETL integration to populate Data Warehouse
-    const etlResult = runEtlPipeline(members, screenings, checkins);
-    for (const r of etlResult.integratedRecords) {
-      await query(
-        `INSERT INTO integrated_members_360
-           (member_id, full_name, dob, email, membership_tier, parq_status,
-            resting_heart_rate, assessment_date, total_checkins, last_checkin_time,
-            frequent_zone, safety_clearance_status, risk_tier, dqm_flags_count, dqm_flags)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-        [
-          r.member_id, r.full_name, r.dob, r.email, r.membership_tier, r.parq_status,
-          r.resting_heart_rate, r.assessment_date, r.total_checkins, r.last_checkin_time,
-          r.frequent_zone, r.safety_clearance_status, r.risk_tier, r.dqm_flags_count, r.dqm_flags
-        ]
-      );
-    }
-
-    console.log(`✅ Multi-source seeding complete: ${members.length} members integrated into Data Warehouse.`);
+    // Target warehouse integrated_members_360 is kept EMPTY (0 rows)
+    // until ETL execution by the Data Steward!
+    console.log(`✅ Multi-source seeding complete: Raw sources populated (CRM: ${members.length}, Clinic: ${screenings.length}, Turnstile: ${checkins.length}). Target Warehouse awaits ETL execution.`);
     return { seeded: true, totalMembers: members.length };
   } catch (err) {
     console.warn('Multi-source seed warning:', err.message);
@@ -83,6 +70,8 @@ async function seedMultiSourceIfEmpty(force = false) {
 
 /**
  * Execute a live ETL Run on the database records
+ * Extracts from crm_members, clinic_screenings, turnstile_scans,
+ * executes DQM cleaning, and loads into integrated_members_360 warehouse.
  */
 async function executeLiveDatabaseEtl() {
   const membersRes = await query('SELECT * FROM crm_members ORDER BY member_id ASC');
@@ -139,4 +128,3 @@ module.exports = {
   seedMultiSourceIfEmpty,
   executeLiveDatabaseEtl
 };
-

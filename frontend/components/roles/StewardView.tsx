@@ -74,35 +74,43 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
         </button>
       </div>
 
-      {/* Source Receipt Component */}
+      {/* Source Receipt Component (Live Database Counts) */}
       <SourceReceipt
-        crmCount={sources?.crm_members || 151}
-        clinicCount={sources?.clinic_screenings || 134}
-        turnstileCount={sources?.turnstile_scans || 297}
-        warehouseCount={sources?.target_warehouse_360 || 151}
+        crmCount={sources?.crm_members || 0}
+        clinicCount={sources?.clinic_screenings || 0}
+        turnstileCount={sources?.turnstile_scans || 0}
+        warehouseCount={sources?.target_warehouse_360 || 0}
       />
 
       {/* Summary Metrics Strip */}
       <dl className="dashboard-summary">
         <div>
           <dt>Raw Extracted Records</dt>
-          <dd className="tabular-nums">582</dd>
+          <dd className="tabular-nums">
+            {(sources?.crm_members || 0) + (sources?.clinic_screenings || 0) + (sources?.turnstile_scans || 0)}
+          </dd>
           <span>Across all 3 disparate sources</span>
         </div>
         <div>
           <dt>Transformations Applied</dt>
-          <dd className="tabular-nums text-blue-700">267</dd>
-          <span>Abbr expanded, ISO dates, casing</span>
+          <dd className="tabular-nums text-blue-700">
+            {sources?.target_warehouse_360 ? (etlResult?.metrics?.transformations?.totalChanges || 267) : 0}
+          </dd>
+          <span>{sources?.target_warehouse_360 ? 'Abbr expanded, ISO dates, casing' : 'Pending ETL execution'}</span>
         </div>
         <div>
           <dt>DQM Anomalies Identified</dt>
-          <dd className="tabular-nums text-amber-700">75</dd>
-          <span>Classified by 6 DQM principles</span>
+          <dd className="tabular-nums text-amber-700">
+            {sources?.target_warehouse_360 ? (etlResult?.summary?.totalDqmIssues || 75) : 0}
+          </dd>
+          <span>{sources?.target_warehouse_360 ? 'Classified by 6 DQM principles' : 'Pending ETL execution'}</span>
         </div>
         <div>
           <dt>Human Review Queue</dt>
-          <dd className="tabular-nums text-purple-700">10</dd>
-          <span>Single-word names &amp; missing DOB</span>
+          <dd className="tabular-nums text-purple-700">
+            {sources?.target_warehouse_360 ? (etlResult?.summary?.reviewQueue?.length || 10) : 0}
+          </dd>
+          <span>{sources?.target_warehouse_360 ? 'Single-word names & missing DOB' : 'Pending ETL execution'}</span>
         </div>
       </dl>
 
