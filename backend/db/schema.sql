@@ -80,11 +80,13 @@ CREATE TABLE IF NOT EXISTS review_queue (
     CHECK (status IN ('Pending', 'Reviewed', 'Approved', 'Rejected')),
   notes              TEXT DEFAULT '',
   manual_value       TEXT DEFAULT '',
+  reviewed_by        TEXT,
   reviewed_at        TIMESTAMPTZ,
   created_at         TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_review_queue_session   ON review_queue(session_id);
 CREATE INDEX IF NOT EXISTS idx_review_queue_status    ON review_queue(status);
+ALTER TABLE review_queue ADD COLUMN IF NOT EXISTS reviewed_by TEXT;
 
 -- ─── 5. GOVERNANCE RULES ─────────────────────────────────────
 -- Data governance prevention policies
@@ -114,6 +116,20 @@ CREATE TABLE IF NOT EXISTS cleaned_records (
   created_at       TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_cleaned_records_session ON cleaned_records(session_id);
+
+CREATE TABLE IF NOT EXISTS cleaning_change_log (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id     UUID NOT NULL REFERENCES audit_sessions(id) ON DELETE CASCADE,
+  row_number     INT NOT NULL,
+  field_name     TEXT NOT NULL,
+  original_value TEXT,
+  new_value      TEXT,
+  rule_name      TEXT NOT NULL,
+  change_type    TEXT NOT NULL,
+  changed_by     TEXT NOT NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_cleaning_change_log_session ON cleaning_change_log(session_id, row_number);
 
 -- ─── 7. MULTI-SOURCE SOURCE 1: CRM MEMBERS (FRONT-DESK) ──────
 CREATE TABLE IF NOT EXISTS crm_members (
@@ -168,6 +184,72 @@ CREATE TABLE IF NOT EXISTS integrated_members_360 (
   dqm_flags                TEXT[],
   updated_at               TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ─── 11. ETL RUN HISTORY, QUALITY ISSUES, AND FIELD LINEAGE ────
+CREATE TABLE IF NOT EXISTS etl_pipeline_runs (
+  run_id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  status                    TEXT NOT NULL DEFAULT 'running'
+    CHECK (status IN ('running', 'succeeded', 'failed')),
+  started_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  finished_at               TIMESTAMPTZ,
+  started_by                TEXT NOT NULL,
+  crm_rows                  INT DEFAULT 0,
+  clinic_rows               INT DEFAULT 0,
+  turnstile_rows            INT DEFAULT 0,
+  loaded_rows               INT DEFAULT 0,
+  issue_count               INT DEFAULT 0,
+  orphan_count              INT DEFAULT 0,
+  transformation_count     INT DEFAULT 0,
+  review_queue_count        INT DEFAULT 0,
+  error_message             TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_etl_pipeline_runs_started ON etl_pipeline_runs(started_at DESC);
+
+CREATE TABLE IF NOT EXISTS etl_pipeline_issues (
+  id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  run_id             UUID NOT NULL REFERENCES etl_pipeline_runs(run_id) ON DELETE CASCADE,
+  source_name        TEXT NOT NULL,
+  member_id          TEXT,
+  field_name         TEXT NOT NULL,
+  issue_category     TEXT NOT NULL,
+  dqm_principle      TEXT NOT NULL,
+  severity           TEXT NOT NULL
+    CHECK (severity IN ('Low', 'Medium', 'High', 'Critical')),
+  issue_value        TEXT,
+  suggested_action   TEXT,
+  review_status      TEXT NOT NULL DEFAULT 'Open'
+    CHECK (review_status IN ('Open', 'Resolved', 'Quarantined')),
+  review_note        TEXT DEFAULT '',
+  reviewed_by        TEXT,
+  reviewed_at        TIMESTAMPTZ,
+  created_at         TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_etl_pipeline_issues_run ON etl_pipeline_issues(run_id, review_status);
+
+CREATE TABLE IF NOT EXISTS etl_field_lineage (
+  run_id       UUID NOT NULL REFERENCES etl_pipeline_runs(run_id) ON DELETE CASCADE,
+  member_id    TEXT NOT NULL,
+  field_name   TEXT NOT NULL,
+  source_name  TEXT NOT NULL,
+  source_key   TEXT NOT NULL,
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (run_id, member_id, field_name)
+);
+
+CREATE TABLE IF NOT EXISTS audit_events (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id    TEXT NOT NULL,
+  actor_role  TEXT NOT NULL,
+  action      TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id   TEXT,
+  details     TEXT DEFAULT '',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_events_created ON audit_events(created_at DESC);
+
+ALTER TABLE integrated_members_360
+  ADD COLUMN IF NOT EXISTS pipeline_run_id UUID REFERENCES etl_pipeline_runs(run_id);
 
 -- ─── SEED: Default Governance Rules ──────────────────────────
 INSERT INTO governance_rules (rule_name, rule_description, dqm_principle, enforcement_level, is_active)

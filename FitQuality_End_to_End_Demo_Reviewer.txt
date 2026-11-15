@@ -1,0 +1,166 @@
+FITQUALITY
+END-TO-END SYSTEM EXPLANATION
+
+FitQuality is a gym member health screening and data management
+system. It demonstrates how the front desk, clinic, and turnstile
+can work with related information while keeping their responsibilities
+separate. The records used in the demo are fictional, and the
+turnstile screen simulates a gate rather than controlling a real one.
+
+When you open the system, you first see the login page. Each account
+has an assigned role. The roles are Front Desk, Clinic, Turnstile,
+Data Steward, Manager, and Administrator. After signing in, the
+navigation shows the workspace available for that role. The backend
+also checks the account's permissions when a protected feature is
+requested.
+
+The Administrator can open all the workspaces, which is convenient
+when looking through the complete system in one session. The other
+accounts have access based on their responsibilities. The demo
+account details are stored separately in the credentials text file
+inside the EJA project folder.
+
+A good place to begin is the Data Steward's "ETL & Quality
+Management" workspace. You can see three source areas: Front Desk CRM,
+Clinic Screenings, and Facility Turnstile. Each area represents a
+different source of information about gym members. Beside these
+sources, you can see the target warehouse, where the system keeps the
+combined member records.
+
+When the steward selects "Run Multi-Source ETL Pipeline", the system
+reads the available records, processes them, and saves an integrated
+view. ETL means extract, transform, and load. Extract is the part
+where the system reads the source records. Transform is where it
+standardizes supported values, checks for issues, matches records by
+member ID, and calculates results. Load is where the integrated
+records are saved to the warehouse.
+
+On a fresh temporary demo database, running the pipeline prepares
+fictional sample data if the member source is empty. After the run,
+the screen shows source counts, warehouse counts, transformations,
+and quality findings. These values come from the current demo data,
+so they may change between runs.
+
+The member ID is important because it connects information from the
+different sources. For example, the front desk might have a
+registration record for a member, the clinic might have a screening
+for that same member, and the turnstile might have scan history. The
+pipeline uses the member ID to bring those details together in the
+Member 360 record.
+
+The complete flow can be seen by creating a fictional member. In
+"Member Intake CRM", the Front Desk user enters the member's name,
+birth date, email address, and membership tier, then selects "Enroll
+Member". The system assigns a member ID. That ID should be noted
+because the clinic and turnstile use it in the next steps.
+
+Before saving, the backend checks the information. For example, it
+requires a first and last name, checks that the birth date is valid
+and not in the future, and checks the email format. It also looks for
+a member with the same name or email and birth date. These checks are
+examples of data quality management, or DQM. Their purpose is to
+catch problems that could make the records unreliable.
+
+After registration, the system attempts to refresh the warehouse.
+The member should remain restricted until suitable screening
+information is available. If the confirmation says that the
+warehouse refresh failed, the Data Steward needs to run the pipeline
+and confirm that it succeeded before relying on the combined record.
+
+The Clinic user then opens "Clinical PAR-Q" and enters the same member
+ID. Here the user can record the screening outcome, resting heart
+rate, medical flag, and notes. The available screening outcomes are
+Cleared, Flagged, and Pending.
+
+For a cleared demo example, the Clinic user can select Cleared, enter
+a suitable whole-number heart rate such as 72, leave the medical risk
+flag unchecked, and save the assessment. The system attempts another
+warehouse refresh after the screening is saved. A Cleared label alone
+does not guarantee access, because a medical flag, missing
+information, or an unsuitable heart rate can still prevent active
+clearance.
+
+Next, the Turnstile user opens "Turnstile IoT Gate", enters the
+member ID, chooses a facility zone, and selects "Tap RFID Keycard".
+The system checks the integrated clearance status and displays
+"ACCESS GRANTED" or "ACCESS DENIED". The simulated scan is also
+recorded.
+
+To see how a change moves through the system, the Clinic user can
+update that same member's assessment to Flagged and check the medical
+risk flag. After the change saves and the warehouse refreshes, the
+Turnstile user can scan the ID again. The expected result is denied
+access. If the refresh failed, the steward should run the pipeline
+before the next scan.
+
+This flow shows integration in a practical way. The front desk creates
+the registration, the clinic supplies the screening, and the
+turnstile uses the integrated clearance result. Each activity has its
+own source, while the member ID helps connect them.
+
+The Turnstile user receives an access decision rather than the
+complete clinical notes. The Front Desk user can check a member's
+clearance without receiving the detailed clinic notes or medical
+flag. These boundaries are part of data governance: access is based
+on the work each role needs to perform.
+
+The Manager uses "Executive 360" to view an operations summary and
+search the integrated member records. You can search for the
+fictional member using the name or member ID and see a limited
+clearance status. Names may appear with standardized capitalization
+after integration, and the search is not dependent on the original
+casing.
+
+Back in "ETL & Quality Management", the Data Steward can open
+"Quality issues" to inspect findings from the latest pipeline run.
+Each finding can show the source, member ID, field, problem, severity,
+and current value. The steward can record an Open, Resolved, or
+Quarantined status. A note is required when marking an issue Resolved
+or Quarantined.
+
+Saving a review status records the steward's decision and note. It
+does not automatically prove that the underlying source value has
+been corrected. The source still needs a separate correction when one
+is necessary.
+
+The "Data Governance" workspace provides the available catalog, rules,
+and audit information. The catalog helps staff understand the data
+the system handles. Audit events record important activity, including
+the actor, action, affected item, and time where available. Examples
+include sign-ins, member and screening changes, pipeline activity,
+and gate scans. What appears depends on the actions performed and
+the current database.
+
+The system also records field lineage for the integration pipeline.
+Lineage helps explain which source is associated with a field in an
+integrated record. This makes it easier to trace where information
+came from when someone reviews a result.
+
+FitQuality has a separate CSV workflow in the backend for auditing,
+cleaning, reviewing, and exporting data. The upload, cleaning, and
+export screens are not all connected to the current role navigation.
+They should not be described as a complete browser workflow yet.
+
+For a local demo, the backend can run in temporary memory mode and
+the frontend can run in a separate terminal:
+
+  Backend folder:  npm run dev:memory
+  Frontend folder: npm run dev
+
+The usual browser address is http://localhost:3001. The local memory
+database resets when the backend stops and does not contact Neon. The
+intended Neon connection and schema still need to be configured and
+verified for this project.
+
+One practical detail when switching between accounts: the backend
+allows five sign-in attempts per IP address in a 15-minute window,
+including successful attempts. To follow the whole flow without
+repeated sign-ins, an administrator can open the role workspaces in
+one session. Individual role accounts can be checked separately after
+the limit resets.
+
+FitQuality is an educational prototype. It does not operate a real
+gate, provide medical advice, or establish legal compliance. Its
+audit and security features are useful for the demonstration, but a
+real deployment would need further privacy, security, clinical, and
+operational review.

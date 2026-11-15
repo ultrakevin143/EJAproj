@@ -7,6 +7,24 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../db/neon');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const { appendAuditEvent } = require('../lib/auditLog');
+
+router.use(requireAuth, requireRole('STEWARD', 'ADMIN'));
+
+router.get('/events', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT id, actor_id, actor_role, action, entity_type, entity_id, details, created_at
+       FROM audit_events ORDER BY created_at DESC LIMIT 200`
+    );
+    await appendAuditEvent(req.authUser, 'read', 'audit_events', '', 'Audit history viewed.');
+    return res.json({ success: true, events: result.rows });
+  } catch (error) {
+    console.error('Audit event list failed:', error.message);
+    return res.status(500).json({ success: false, error: 'Audit events are unavailable.' });
+  }
+});
 const { CLASSROOM_BASELINE } = require('../lib/dqmClassifier');
 
 // GET /api/audit/latest
@@ -32,6 +50,7 @@ router.get('/latest', async (req, res) => {
       `SELECT COUNT(*) AS count FROM audit_errors WHERE session_id = $1 AND issue_category = 'Mixed Date Format'`,
       [session.id]
     );
+    await appendAuditEvent(req.authUser, 'read', 'audit_session', session.id, 'Audit findings viewed.');
 
     // Build category & DQM counts from stored errors
     const categoryCounts = {};
@@ -75,7 +94,7 @@ router.get('/latest', async (req, res) => {
     });
   } catch (err) {
     console.error('Audit/latest error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'The request could not be completed.' });
   }
 });
 
@@ -92,6 +111,7 @@ router.get('/:sessionId', async (req, res) => {
     }
 
     const session = sessionRes.rows[0];
+    await appendAuditEvent(req.authUser, 'read', 'audit_session', session.id, 'Audit session details viewed.');
     const errorsRes = await query(
       `SELECT * FROM audit_errors WHERE session_id = $1 ORDER BY row_number ASC`,
       [sessionId]
@@ -139,7 +159,7 @@ router.get('/:sessionId', async (req, res) => {
     });
   } catch (err) {
     console.error('Audit/:sessionId error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'The request could not be completed.' });
   }
 });
 

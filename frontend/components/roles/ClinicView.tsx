@@ -2,14 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { Stethoscope, Heart, AlertOctagon, CheckCircle2, AlertTriangle, RefreshCw, Search } from 'lucide-react';
+import { apiFetch } from '../../lib/api';
 
 interface Screening {
   member_id: string;
   parq_status: string;
   resting_heart_rate: number | null;
   assessment_date: string;
-  medical_flag: boolean;
+  medical_flag: string | boolean | null;
   notes: string;
+}
+
+function hasMedicalFlag(value: Screening['medical_flag']) {
+  return value === true || (typeof value === 'string' && ['yes', 'true', '1', 'flagged'].includes(value.trim().toLowerCase()));
 }
 
 export default function ClinicView() {
@@ -29,7 +34,7 @@ export default function ClinicView() {
   const fetchScreenings = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:3000/api/roles/clinic/screenings');
+      const res = await apiFetch('/roles/clinic/screenings');
       const data = await res.json();
       if (data.success) {
         setScreenings(data.screenings || []);
@@ -52,7 +57,7 @@ export default function ClinicView() {
     setSubmitting(true);
     setFeedback(null);
     try {
-      const res = await fetch('http://localhost:3000/api/roles/clinic/screenings', {
+      const res = await apiFetch('/roles/clinic/screenings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -87,7 +92,8 @@ export default function ClinicView() {
       {/* Page Heading */}
       <div className="page-heading">
         <div>
-          <h1>Clinical PAR-Q Health Screening Station</h1>
+          <span className="eyebrow">Source 02 · clinic screening</span>
+          <h1>Clinical screening</h1>
           <p>
             Evaluate Physical Activity Readiness (PAR-Q), monitor resting biometric vitals, and record physician risk flags.
           </p>
@@ -115,7 +121,7 @@ export default function ClinicView() {
         <div>
           <dt>Cardiovascular / Medical Flags</dt>
           <dd className="tabular-nums text-red-700">
-            {screenings.filter((s) => s.medical_flag || s.parq_status === 'Flagged').length}
+            {screenings.filter((s) => hasMedicalFlag(s.medical_flag) || s.parq_status === 'Flagged').length}
           </dd>
           <span>Turnstile access blocked</span>
         </div>
@@ -307,7 +313,7 @@ export default function ClinicView() {
                     </td>
                     <td className="tabular-nums text-slate-600 text-xs">{s.assessment_date || '—'}</td>
                     <td>
-                      {s.medical_flag ? (
+                      {hasMedicalFlag(s.medical_flag) ? (
                         <span className="status-pill negative">FLAGGED</span>
                       ) : (
                         <span className="status-pill positive">CLEAR</span>

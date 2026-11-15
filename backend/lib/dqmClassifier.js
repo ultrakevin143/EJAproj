@@ -75,6 +75,14 @@ const ISSUE_DEFINITIONS = {
     suggestedAction:
       'Route to human review queue; inspect source gym management system timestamp logs.'
   },
+  FUTURE_DATE: {
+    category: 'Future Date',
+    dqmPrinciples: ['Accuracy', 'Timeliness'],
+    primaryPrinciple: 'Timeliness',
+    severity: 'High',
+    autoFixable: false,
+    suggestedAction: 'Confirm the date with the source system and correct it before using the record.'
+  },
   MIXED_DATE_FORMAT: {
     category: 'Mixed Date Format',
     dqmPrinciples: ['Consistency'],

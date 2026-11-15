@@ -9,11 +9,12 @@ import TurnstileView from '../components/roles/TurnstileView';
 import StewardView from '../components/roles/StewardView';
 import ManagerView from '../components/roles/ManagerView';
 import GovernanceView from '../components/GovernanceView';
-import { fetchLatestAudit } from '../lib/api';
+import { fetchCurrentUser, fetchLatestAudit, logout } from '../lib/api';
 import { ErrorLogItem } from '../types/dqm';
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string>('dashboard');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [errorLog, setErrorLog] = useState<ErrorLogItem[]>([]);
@@ -32,7 +33,30 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    loadLatestAudit();
+    let mounted = true;
+
+    fetchCurrentUser()
+      .then((result) => {
+        if (!mounted || !result.success || !result.user) return;
+        setCurrentUser(result.user);
+        if (result.user.role === 'FRONTDESK') setActiveSection('frontdesk');
+        else if (result.user.role === 'CLINIC') setActiveSection('clinic');
+        else if (result.user.role === 'TURNSTILE') setActiveSection('turnstile');
+        else if (result.user.role === 'STEWARD') setActiveSection('steward');
+        else setActiveSection('dashboard');
+
+        if (['STEWARD', 'ADMIN'].includes(result.user.role)) {
+          loadLatestAudit();
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (mounted) setAuthLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleLoginSuccess = (user: UserAccount) => {
@@ -42,7 +66,23 @@ export default function HomePage() {
     else if (user.role === 'TURNSTILE') setActiveSection('turnstile');
     else if (user.role === 'STEWARD') setActiveSection('steward');
     else setActiveSection('dashboard');
+    if (['STEWARD', 'ADMIN'].includes(user.role)) loadLatestAudit();
   };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      setCurrentUser(null);
+      setSessionId(null);
+      setErrorLog([]);
+      setActiveSection('dashboard');
+    }
+  };
+
+  if (authLoading) {
+    return <main className="min-h-screen grid place-items-center text-slate-500">Checking your session…</main>;
+  }
 
   // When not authenticated, show Login Page
   if (!currentUser) {
@@ -53,7 +93,7 @@ export default function HomePage() {
   return (
     <WorkspaceShell
       currentUser={currentUser}
-      onLogout={() => setCurrentUser(null)}
+      onLogout={handleLogout}
       activeSection={activeSection}
       onSectionChange={setActiveSection}
     >

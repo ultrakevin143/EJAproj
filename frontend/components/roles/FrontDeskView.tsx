@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, UserPlus, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { apiFetch } from '../../lib/api';
 
 interface Member {
   member_id: string;
@@ -33,7 +34,7 @@ export default function FrontDeskView() {
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:3000/api/roles/frontdesk/members');
+      const res = await apiFetch('/roles/frontdesk/members');
       const data = await res.json();
       if (data.success) {
         setMembers(data.members || []);
@@ -56,7 +57,7 @@ export default function FrontDeskView() {
     setSubmitting(true);
     setFeedback(null);
     try {
-      const res = await fetch('http://localhost:3000/api/roles/frontdesk/members', {
+      const res = await apiFetch('/roles/frontdesk/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,11 +85,11 @@ export default function FrontDeskView() {
     }
   };
 
-  const handleCheckClearance = async () => {
-    if (!checkId) return;
+  const handleCheckClearance = async (memberId = checkId) => {
+    if (!memberId.trim()) return;
     setCheckingClearance(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/roles/frontdesk/clearance/${checkId.trim()}`);
+      const res = await apiFetch(`/roles/frontdesk/clearance/${encodeURIComponent(memberId.trim())}`);
       const data = await res.json();
       if (data.success) {
         setClearanceResult(data.member);
@@ -113,7 +114,8 @@ export default function FrontDeskView() {
       {/* Page Heading */}
       <div className="page-heading">
         <div>
-          <h1>Member Intake &amp; Front-Desk CRM</h1>
+          <span className="eyebrow">Source 01 · front-desk registration</span>
+          <h1>Member intake</h1>
           <p>Register new club members and verify keycard safety clearance before physical gym entry.</p>
         </div>
         <button onClick={fetchMembers} className="btn btn-secondary">
@@ -262,7 +264,7 @@ export default function FrontDeskView() {
                 />
                 <button
                   type="button"
-                  onClick={handleCheckClearance}
+                  onClick={() => handleCheckClearance()}
                   disabled={checkingClearance}
                   className="btn btn-secondary px-3"
                 >
@@ -286,13 +288,11 @@ export default function FrontDeskView() {
                       <span className="font-semibold text-slate-700">{clearanceResult.membership_tier}</span>
                     </div>
                     <div className="flex justify-between items-center pt-1 border-t border-slate-200">
-                      <span className="text-slate-500">Safety Status:</span>
+                      <span className="text-slate-500">Access Status:</span>
                       <span
                         className={`status-pill ${
                           clearanceResult.safety_clearance_status === 'ACTIVE_CLEARANCE'
                             ? 'positive'
-                            : clearanceResult.safety_clearance_status === 'BLOCKED_MEDICAL_FLAG'
-                            ? 'negative'
                             : 'warning'
                         }`}
                       >
@@ -306,7 +306,7 @@ export default function FrontDeskView() {
           </div>
 
           <div className="mt-4 p-2.5 bg-slate-50 rounded border border-slate-200 text-[11px] text-slate-500">
-            <strong>Reception Notice:</strong> If safety status is BLOCKED or RESTRICTED, direct member to the club clinic for PAR-Q assessment.
+            <strong>Reception Notice:</strong> If access is restricted, direct the member to the club clinic for assistance.
           </div>
         </div>
       </div>
@@ -361,7 +361,7 @@ export default function FrontDeskView() {
                       <button
                         onClick={() => {
                           setCheckId(m.member_id);
-                          handleCheckClearance();
+                          handleCheckClearance(m.member_id);
                         }}
                         className="text-xs text-blue-700 hover:underline font-semibold"
                       >

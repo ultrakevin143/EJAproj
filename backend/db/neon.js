@@ -2,15 +2,18 @@
  * Database Connection & Adapter Layer
  * Supports:
  *  1. Live PostgreSQL / Neon Cloud PostgreSQL (when DATABASE_URL is reachable)
- *  2. Embedded PostgreSQL Emulator (via pg-mem) for instant zero-config local testing
+ *  2. Embedded PostgreSQL Emulator (via pg-mem), only when explicitly enabled in development
  */
 
 const { Pool } = require('pg');
-const { newDb } = require('pg-mem');
+const { newDb, DataType } = require('pg-mem');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const forceMemoryModeRequested = process.env.FITQUALITY_FORCE_MEMORY_DB === 'true';
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../.env.local'), override: true });
+if (forceMemoryModeRequested) process.env.FITQUALITY_FORCE_MEMORY_DB = 'true';
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/gym_dqm';
 
@@ -39,6 +42,12 @@ function initMemoryDb() {
   db.public.registerFunction({
     name: 'gen_random_uuid',
     implementation: () => crypto.randomUUID()
+  });
+  db.public.registerFunction({
+    name: 'trim',
+    args: [DataType.text],
+    returns: DataType.text,
+    implementation: value => String(value).trim()
   });
 
   const schemaPath = path.join(__dirname, 'schema.sql');
@@ -71,24 +80,62 @@ function initMemoryDb() {
  * Run a SQL query
  */
 async function query(text, params = []) {
-  if (isUsingMemoryDb || !livePool) {
-    if (!memoryPgClient) {
-      initMemoryDb();
-    }
+  if (isUsingMemoryDb) {
     return await memoryPgClient.query(text, params);
   }
 
+  if (!livePool) {
+    throw new Error('Database is not connected. Start the server only after configuring a database.');
+  }
   return await livePool.query(text, params);
+}
+
+async function withTransaction(work) {
+  if (isUsingMemoryDb) {
+    const client = await memoryPgClient.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await work((text, params = []) => client.query(text, params));
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  if (!livePool) throw new Error('Database is not connected.');
+  const client = await livePool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await work((text, params = []) => client.query(text, params));
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 /**
  * Test database connection on startup
  */
 async function testConnection() {
+  if (process.env.NODE_ENV !== 'production' && process.env.FITQUALITY_FORCE_MEMORY_DB === 'true') {
+    initMemoryDb();
+    console.log('💡 [DB Mode]: Using the explicitly requested in-memory preview. Neon was not contacted.');
+    return true;
+  }
+
+  let testPool;
   try {
-    const testPool = new Pool({
+    testPool = new Pool({
       connectionString,
-      ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false,
+      ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: true } : false,
       connectionTimeoutMillis: 2000
     });
 
@@ -98,14 +145,38 @@ async function testConnection() {
     isUsingMemoryDb = false;
     return true;
   } catch (err) {
-    console.log(`ℹ️  Live PostgreSQL not reachable (${err.message}). Activating embedded PostgreSQL engine...`);
-    initMemoryDb();
-    return true;
+    if (testPool) {
+      await testPool.end().catch(() => {});
+    }
+
+    if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_IN_MEMORY_DB === 'true') {
+      console.log('Live PostgreSQL is unavailable. Using the explicitly enabled in-memory database.');
+      initMemoryDb();
+      return true;
+    }
+
+    console.error(`Database connection failed: ${err.message}`);
+    return false;
+  }
+}
+
+async function closeDatabase() {
+  if (livePool) {
+    await livePool.end();
+    livePool = null;
+  }
+  if (memoryPgClient) {
+    await memoryPgClient.end();
+    memoryPgClient = null;
+    memoryDb = null;
+    isUsingMemoryDb = false;
   }
 }
 
 module.exports = {
   query,
+  withTransaction,
+  closeDatabase,
   testConnection,
   isInMemory: () => isUsingMemoryDb
 };

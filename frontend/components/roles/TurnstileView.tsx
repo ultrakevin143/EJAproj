@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Radio, CheckCircle2, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { apiFetch } from '../../lib/api';
 
 interface ScanItem {
   checkin_id: string;
@@ -25,7 +26,7 @@ export default function TurnstileView() {
   const fetchRecentScans = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:3000/api/roles/turnstile/recent-scans');
+      const res = await apiFetch('/roles/turnstile/recent-scans');
       const data = await res.json();
       if (data.success) {
         setRecentScans(data.scans || []);
@@ -48,7 +49,7 @@ export default function TurnstileView() {
     setScanning(true);
     setScanResult(null);
     try {
-      const res = await fetch('http://localhost:3000/api/roles/turnstile/scan', {
+      const res = await apiFetch('/roles/turnstile/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -74,7 +75,8 @@ export default function TurnstileView() {
       {/* Page Heading */}
       <div className="page-heading">
         <div>
-          <h1>Facility IoT RFID Turnstile Terminal</h1>
+          <span className="eyebrow">Source 03 · facility access</span>
+          <h1>Member access terminal</h1>
           <p>
             Automated physical access barrier. Verifies real-time member health clearance against the PostgreSQL warehouse.
           </p>
@@ -225,7 +227,7 @@ export default function TurnstileView() {
               <h3 className="text-xl font-bold text-emerald-900 mb-1">ACCESS GRANTED</h3>
               <p className="text-sm font-semibold text-emerald-800 mb-3">Barrier Unlocked • Enjoy Your Workout</p>
               <div className="text-xs text-emerald-800 bg-white/70 p-3 rounded border border-emerald-200 max-w-sm mx-auto text-left space-y-1">
-                <div><strong>Member:</strong> {scanResult.member?.full_name} ({scanResult.member?.member_id})</div>
+                <div><strong>Member ID:</strong> {scanResult.member?.member_id}</div>
                 <div><strong>Health Clearance:</strong> ACTIVE_CLEARANCE</div>
                 <div><strong>Zone:</strong> {scanResult.facility_zone}</div>
               </div>
@@ -240,7 +242,7 @@ export default function TurnstileView() {
               <div className="text-xs text-red-900 bg-white/80 p-3 rounded border border-red-200 max-w-sm mx-auto text-left space-y-1.5">
                 <div><strong>Denial Reason:</strong> {scanResult.denialReason}</div>
                 {scanResult.member && (
-                  <div><strong>Member:</strong> {scanResult.member.full_name} ({scanResult.member.member_id})</div>
+                  <div><strong>Member ID:</strong> {scanResult.member.member_id}</div>
                 )}
                 <div className="pt-1 text-[11px] text-red-700 border-t border-red-200">
                   Please report to the Front Desk or Clinic Station for health re-evaluation.

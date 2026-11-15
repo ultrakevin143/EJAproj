@@ -17,6 +17,12 @@ const {
 } = require('./dqmClassifier');
 
 const REQUIRED_HEADERS = ['Name', 'DOB', 'Email', 'Screening Result', 'Date Recorded'];
+const MAX_DATA_ROWS = 25000;
+
+function normalizeHeader(header) {
+  const cleaned = String(header || '').replace(/^\uFEFF/, '').trim();
+  return REQUIRED_HEADERS.find(required => required.toLowerCase() === cleaned.toLowerCase()) || cleaned;
+}
 
 // ─── Date Helpers ────────────────────────────────────────────────────────────
 
@@ -28,6 +34,17 @@ function getDaysInMonth(year, month) {
   if (month < 1 || month > 12) return 0;
   const days = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return days[month - 1];
+}
+
+function todayIsoDate(timeZone = 'Asia/Manila') {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 /**
@@ -126,21 +143,46 @@ function validateName(name) {
 
 function auditDataset(csvInput) {
   let rows = [];
+  let duplicateHeader = false;
 
   if (typeof csvInput === 'string') {
     try {
-      rows = parse(csvInput, { columns: true, skip_empty_lines: true, trim: false });
+      rows = parse(csvInput, {
+        columns: (headers) => {
+          const normalized = headers.map(normalizeHeader);
+          duplicateHeader = new Set(normalized.map(header => header.toLowerCase())).size !== normalized.length;
+          return normalized;
+        },
+        skip_empty_lines: true,
+        trim: false,
+        relax_column_count: false
+      });
     } catch (err) {
       return { success: false, error: `CSV Parsing Error: ${err.message}` };
     }
   } else if (Array.isArray(csvInput)) {
-    rows = csvInput;
+    rows = csvInput.map((record) => {
+      const normalized = {};
+      for (const [header, value] of Object.entries(record || {})) {
+        const key = normalizeHeader(header);
+        if (Object.prototype.hasOwnProperty.call(normalized, key)) duplicateHeader = true;
+        normalized[key] = value;
+      }
+      return normalized;
+    });
   } else {
     return { success: false, error: 'Invalid input provided to audit engine' };
   }
 
   if (!rows || rows.length === 0) {
     return { success: false, error: 'Uploaded file contains no data rows.' };
+  }
+
+  if (rows.length > MAX_DATA_ROWS) {
+    return { success: false, error: `Dataset exceeds the ${MAX_DATA_ROWS.toLocaleString()} row limit.` };
+  }
+  if (duplicateHeader) {
+    return { success: false, error: 'Dataset contains duplicate column names after trimming and standardization.' };
   }
 
   // Validate required columns
@@ -162,6 +204,7 @@ function auditDataset(csvInput) {
   const affectedRecordIndices = new Set();
   const duplicateRows = [];
   const seenSignatures = new Map();
+  const auditDate = todayIsoDate();
 
   const categoryCounts = {
     'Abbreviated Screening Result': 0,
@@ -171,6 +214,7 @@ function auditDataset(csvInput) {
     'Missing DOB': 0,
     'Malformed Email': 0,
     'Invalid Recorded Date': 0,
+    'Future Date': 0,
     'Duplicate Record': 0
   };
 
@@ -227,7 +271,16 @@ function auditDataset(csvInput) {
     }
 
     // CHECK 1: DUPLICATE ROW
-    const sig = `${nameVal.trim()}|${dobVal.trim()}|${emailVal.trim()}|${screeningVal.trim()}|${dateRecordedVal.trim()}`;
+    const normalizedDob = parseDateDetails(dobVal);
+    const normalizedRecordedDate = parseDateDetails(dateRecordedVal);
+    const normalizedScreening = SCREENING_RESULT_ABBR_MAP[screeningVal.trim().toLowerCase()] || screeningVal.trim().toLowerCase();
+    const sig = [
+      nameVal.trim().replace(/\s+/g, ' ').toLowerCase(),
+      normalizedDob.isValid ? normalizedDob.formattedIso : dobVal.trim(),
+      emailVal.trim().toLowerCase(),
+      normalizedScreening,
+      normalizedRecordedDate.isValid ? normalizedRecordedDate.formattedIso : dateRecordedVal.trim()
+    ].join('|');
     if (seenSignatures.has(sig)) {
       const originalRow = seenSignatures.get(sig);
       duplicateRows.push({ rowNumber, duplicateOfRow: originalRow, data: row });
@@ -249,6 +302,8 @@ function auditDataset(csvInput) {
       const dobDate = parseDateDetails(dobVal);
       if (!dobDate.isValid) {
         addIssueEvent('DOB', dobVal, 'INVALID_RECORDED_DATE', `DOB is invalid: ${dobDate.reason}`);
+      } else if (dobDate.formattedIso > auditDate) {
+        addIssueEvent('DOB', dobVal, 'FUTURE_DATE', 'Date of Birth cannot be in the future');
       } else if (!dobDate.isStandardIso) {
         addConsistencyPattern('DOB', dobVal, dobDate.formattedIso);
       }
@@ -282,6 +337,8 @@ function auditDataset(csvInput) {
       const recDate = parseDateDetails(dateRecordedVal);
       if (!recDate.isValid) {
         addIssueEvent('Date Recorded', dateRecordedVal, 'INVALID_RECORDED_DATE', `Date Recorded is impossible/invalid: ${recDate.reason}`);
+      } else if (recDate.formattedIso > auditDate) {
+        addIssueEvent('Date Recorded', dateRecordedVal, 'FUTURE_DATE', 'Date Recorded cannot be in the future');
       } else if (!recDate.isStandardIso) {
         addConsistencyPattern('Date Recorded', dateRecordedVal, recDate.formattedIso);
       }
@@ -333,6 +390,7 @@ function auditDataset(csvInput) {
 module.exports = {
   auditDataset,
   parseDateDetails,
+  todayIsoDate,
   isValidEmail,
   validateName,
   REQUIRED_HEADERS

@@ -7,9 +7,14 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
-const { query } = require('../db/neon');
+const { query, withTransaction } = require('../db/neon');
+const { insertRowsInBatches } = require('../db/batchInsert');
 const { auditDataset } = require('../lib/auditEngine');
 const { applySafeCleaning } = require('../lib/cleanEngine');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const { appendAuditEvent } = require('../lib/auditLog');
+
+router.use(requireAuth, requireRole('STEWARD', 'ADMIN'));
 
 // POST /api/clean/:sessionId
 router.post('/:sessionId', async (req, res) => {
@@ -65,42 +70,52 @@ router.post('/:sessionId', async (req, res) => {
       field: q.field_name,
       status: q.status,
       notes: q.notes,
-      manualValue: q.manual_value
+      manualValue: q.manual_value,
+      reviewedBy: q.reviewed_by
     }));
 
     const { cleanedRows, reviewQueue, changelog, summary } = applySafeCleaning(records, errorLog, existingQueue);
 
     // Persist cleaned records
-    await query(`DELETE FROM cleaned_records WHERE session_id = $1`, [sessionId]);
-    for (const [i, row] of cleanedRows.entries()) {
-      const wasModified = changelog.some(c => c.rowNumber === i + 1);
-      await query(
-        `INSERT INTO cleaned_records (id, session_id, row_number, member_name, dob, email, screening_result, date_recorded, was_modified)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [crypto.randomUUID(), sessionId, i + 1, row['Name'], row['DOB'], row['Email'], row['Screening Result'], row['Date Recorded'], wasModified]
-      );
-    }
+    await withTransaction(async (tx) => {
+      await tx(`DELETE FROM cleaned_records WHERE session_id = $1`, [sessionId]);
+      const changedRows = new Set(changelog.map(change => change.rowNumber));
+      const cleanedRecordRows = cleanedRows.map((row, index) => [
+        crypto.randomUUID(), sessionId, index + 1,
+        row['Name'], row['DOB'], row['Email'], row['Screening Result'], row['Date Recorded'],
+        changedRows.has(index + 1)
+      ]);
+      await insertRowsInBatches(tx, 'cleaned_records', [
+        'id', 'session_id', 'row_number', 'member_name', 'dob', 'email',
+        'screening_result', 'date_recorded', 'was_modified'
+      ], cleanedRecordRows);
 
-    // Persist review queue
-    await query(`DELETE FROM review_queue WHERE session_id = $1`, [sessionId]);
-    for (const item of reviewQueue) {
-      await query(
-        `INSERT INTO review_queue
-           (id, session_id, row_number, row_index, field_name, current_value, issue_category, primary_principle,
-            dqm_principles, severity, reason_for_review, suggested_action, status, notes, manual_value)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-        [
-          crypto.randomUUID(),
-          sessionId, item.rowNumber, item.rowIndex, item.field, item.currentValue,
-          item.category, item.primaryPrinciple, item.dqmPrinciples, item.severity,
-          item.reasonForReview, item.suggestedNextAction,
-          item.status, item.notes, item.manualValue
-        ]
-      );
-    }
+      await tx(`DELETE FROM review_queue WHERE session_id = $1`, [sessionId]);
+      const reviewRows = reviewQueue.map(item => [
+        crypto.randomUUID(), sessionId, item.rowNumber, item.rowIndex, item.field, item.currentValue,
+        item.category, item.primaryPrinciple, item.dqmPrinciples, item.severity,
+        item.reasonForReview, item.suggestedNextAction,
+        item.status, item.notes, item.manualValue, item.reviewedBy || null
+      ]);
+      await insertRowsInBatches(tx, 'review_queue', [
+        'id', 'session_id', 'row_number', 'row_index', 'field_name', 'current_value',
+        'issue_category', 'primary_principle', 'dqm_principles', 'severity',
+        'reason_for_review', 'suggested_action', 'status', 'notes', 'manual_value', 'reviewed_by'
+      ], reviewRows);
 
-    // Update session status
-    await query(`UPDATE audit_sessions SET status = 'cleaned' WHERE id = $1`, [sessionId]);
+      const changeRows = changelog.map(change => [
+        crypto.randomUUID(), sessionId, change.rowNumber, change.field,
+        String(change.originalValue ?? ''), String(change.newValue ?? ''),
+        String(change.rule || '').slice(0, 200), String(change.type || '').slice(0, 80), req.authUser.id
+      ]);
+      await insertRowsInBatches(tx, 'cleaning_change_log', [
+        'id', 'session_id', 'row_number', 'field_name', 'original_value', 'new_value',
+        'rule_name', 'change_type', 'changed_by'
+      ], changeRows);
+
+      await tx(`UPDATE audit_sessions SET status = 'cleaned' WHERE id = $1`, [sessionId]);
+      await appendAuditEvent(req.authUser, 'clean', 'audit_session', sessionId, `Applied ${summary.totalAutomatedChanges} changes.`, tx);
+    });
 
     return res.json({
       success: true,
@@ -111,7 +126,7 @@ router.post('/:sessionId', async (req, res) => {
     });
   } catch (err) {
     console.error('Clean error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'The request could not be completed.' });
   }
 });
 
@@ -151,6 +166,8 @@ router.get('/:sessionId/compare', async (req, res) => {
     };
     const newSum = cleanedAudit.summary;
 
+    await appendAuditEvent(req.authUser, 'read', 'cleaning_comparison', sessionId, 'Before and after quality summary viewed.');
+
     return res.json({
       success: true,
       comparison: {
@@ -173,7 +190,7 @@ router.get('/:sessionId/compare', async (req, res) => {
     });
   } catch (err) {
     console.error('Compare error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'The request could not be completed.' });
   }
 });
 

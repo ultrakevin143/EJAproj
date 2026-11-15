@@ -10,9 +10,34 @@
  * Zero Hallucination Rule: Never fabricates missing names, DOBs, emails, or screening results.
  */
 
-const { parseDateDetails, isValidEmail, validateName } = require('./auditEngine');
+const { parseDateDetails, todayIsoDate, isValidEmail, validateName } = require('./auditEngine');
 const { stringify } = require('csv-stringify/sync');
-const { SCREENING_RESULT_ABBR_MAP } = require('./dqmClassifier');
+const { SCREENING_RESULT_ABBR_MAP, VALID_SCREENING_RESULTS } = require('./dqmClassifier');
+const { protectRows } = require('./csvSafety');
+
+function normalizeApprovedValue(field, value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const cleaned = value.trim();
+
+  if (field === 'Name') {
+    return validateName(cleaned).isIncomplete ? null : cleaned.replace(/\s+/g, ' ');
+  }
+  if (field === 'DOB' || field === 'Date Recorded') {
+    const parsed = parseDateDetails(cleaned);
+    if (!parsed.isValid || parsed.formattedIso > todayIsoDate()) return null;
+    return parsed.formattedIso;
+  }
+  if (field === 'Email') {
+    return isValidEmail(cleaned) ? cleaned.toLowerCase() : null;
+  }
+  if (field === 'Screening Result') {
+    const lower = cleaned.toLowerCase();
+    const expanded = SCREENING_RESULT_ABBR_MAP[lower] || lower;
+    if (!VALID_SCREENING_RESULTS.includes(expanded.toLowerCase())) return null;
+    return expanded.charAt(0).toUpperCase() + expanded.slice(1).toLowerCase();
+  }
+  return null;
+}
 
 /**
  * Applies safe cleaning to an array of row objects.
@@ -109,6 +134,28 @@ function applySafeCleaning(records, errorLog = [], existingReviewQueue = []) {
     }
   });
 
+  if (Array.isArray(existingReviewQueue)) {
+    existingReviewQueue.forEach((item) => {
+      if (item.status !== 'Approved') return;
+      const row = cleanedRows[Number(item.rowNumber) - 1];
+      if (!row) return;
+
+      const normalizedValue = normalizeApprovedValue(item.field, item.manualValue);
+      if (normalizedValue === null || !Object.prototype.hasOwnProperty.call(row, item.field)) return;
+
+      const originalValue = row[item.field];
+      row[item.field] = normalizedValue;
+      changelog.push({
+        rowNumber: Number(item.rowNumber),
+        field: item.field,
+        originalValue,
+        newValue: normalizedValue,
+        rule: 'Apply steward-approved correction',
+        type: 'Human Approved Correction'
+      });
+    });
+  }
+
   // Build Human Review Queue from non-auto-fixable errors
   const statusMap = new Map();
   if (Array.isArray(existingReviewQueue)) {
@@ -116,7 +163,8 @@ function applySafeCleaning(records, errorLog = [], existingReviewQueue = []) {
       statusMap.set(`${item.rowNumber}-${item.field}`, {
         status: item.status,
         notes: item.notes,
-        manualValue: item.manualValue
+        manualValue: item.manualValue,
+        reviewedBy: item.reviewedBy
       });
     });
   }
@@ -139,7 +187,8 @@ function applySafeCleaning(records, errorLog = [], existingReviewQueue = []) {
         suggestedNextAction: err.suggestedAction,
         status: existing?.status || 'Pending',
         notes: existing?.notes || '',
-        manualValue: existing?.manualValue || ''
+        manualValue: existing?.manualValue || '',
+        reviewedBy: existing?.reviewedBy || ''
       });
     }
   });
@@ -163,7 +212,7 @@ function rowsToCsvString(
   rows,
   headers = ['Name', 'DOB', 'Email', 'Screening Result', 'Date Recorded']
 ) {
-  return stringify(rows, { header: true, columns: headers });
+  return stringify(protectRows(rows), { header: true, columns: headers });
 }
 
 module.exports = { applySafeCleaning, rowsToCsvString };

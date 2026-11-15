@@ -6,31 +6,32 @@
 
 const fs = require('fs');
 const path = require('path');
-const { pool, testConnection } = require('./neon');
+const { query, testConnection, closeDatabase } = require('./neon');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../.env.local'), override: true });
 
 async function migrate() {
   console.log('🔄 Starting database migration...');
 
   const connected = await testConnection();
   if (!connected) {
-    console.error('❌ Cannot connect to database. Check your DATABASE_URL in .env');
-    process.exit(1);
+    console.error('❌ Cannot connect to database. Check DATABASE_URL in backend/.env.local.');
+    process.exitCode = 1;
+    return;
   }
 
   const schemaPath = path.join(__dirname, 'schema.sql');
   const sql = fs.readFileSync(schemaPath, 'utf-8');
 
   try {
-    await pool.query(sql);
+    await query(sql);
     console.log('✅ Schema migration completed successfully!');
-    console.log('   Tables created: audit_sessions, audit_records, audit_errors, review_queue, governance_rules, cleaned_records');
-    console.log('   Governance rules seeded.');
+    console.log('   Schema tables and governance rules are ready.');
   } catch (err) {
     console.error('❌ Migration failed:', err.message);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
-    await pool.end();
+    await closeDatabase();
   }
 }
 

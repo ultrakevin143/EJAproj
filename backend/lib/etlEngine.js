@@ -12,7 +12,7 @@
  * 3. LOAD: Prepares clean, consolidated records for PostgreSQL Target Data Warehouse
  */
 
-const { parseDateDetails, isValidEmail, validateName } = require('./auditEngine');
+const { parseDateDetails, todayIsoDate, isValidEmail, validateName } = require('./auditEngine');
 const { SCREENING_RESULT_ABBR_MAP, VALID_SCREENING_RESULTS } = require('./dqmClassifier');
 
 function titleCase(str) {
@@ -22,6 +22,11 @@ function titleCase(str) {
     .split(' ')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
+}
+
+function parseDateScore(value) {
+  const parsed = parseDateDetails(String(value || ''));
+  return parsed.isValid ? new Date(`${parsed.formattedIso}T00:00:00Z`).getTime() : -1;
 }
 
 /**
@@ -57,7 +62,27 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
   // Index Source 2 (Screenings) by member_id
   const screeningMap = new Map();
   screeningsRaw.forEach(s => {
-    if (s.member_id) screeningMap.set(s.member_id.trim(), s);
+    if (!s.member_id) return;
+    const memberId = s.member_id.trim();
+    const existing = screeningMap.get(memberId);
+    if (!existing) {
+      screeningMap.set(memberId, s);
+      return;
+    }
+
+    etlMetrics.dqmIssues.push({
+      source: 'Source 2 (Clinic)',
+      member_id: memberId,
+      field: 'member_id',
+      value: memberId,
+      category: 'Duplicate Screening Record',
+      dqmPrinciple: 'Consistency',
+      severity: 'High',
+      action: 'Multiple screening rows exist. The newest valid assessment date was selected; review the source records.'
+    });
+    if (parseDateScore(s.assessment_date) > parseDateScore(existing.assessment_date)) {
+      screeningMap.set(memberId, s);
+    }
   });
 
   // Aggregate Source 3 (Check-ins) by member_id
@@ -88,16 +113,21 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
         totalCheckins: 0,
         lastCheckin: chk.checkin_time,
         frequentZone: chk.facility_zone,
-        zones: []
+        zoneCounts: new Map()
       });
     }
     const summary = checkinSummary.get(mId);
     summary.totalCheckins++;
-    summary.zones.push(chk.facility_zone);
+    const zone = String(chk.facility_zone || 'Unspecified').trim() || 'Unspecified';
+    summary.zoneCounts.set(zone, (summary.zoneCounts.get(zone) || 0) + 1);
     if (new Date(chk.checkin_time) > new Date(summary.lastCheckin)) {
       summary.lastCheckin = chk.checkin_time;
-      summary.frequentZone = chk.facility_zone;
     }
+  });
+
+  checkinSummary.forEach((summary) => {
+    summary.frequentZone = [...summary.zoneCounts.entries()]
+      .sort((left, right) => right[1] - left[1])[0]?.[0] || 'None';
   });
 
   // ─── STAGE 2: TRANSFORM & INTEGRATE (JOIN + DQM) ───────────────
@@ -114,9 +144,12 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
 
     let transformedName = member.full_name || '';
     let transformedDob = member.dob || '';
-    let transformedEmail = member.email || '';
+    let transformedEmail = (member.email || '').trim();
     let transformedParq = screening?.parq_status || '';
-    let transformedHeartRate = screening?.resting_heart_rate ? Number(screening.resting_heart_rate) : null;
+    const rawHeartRate = screening?.resting_heart_rate;
+    let transformedHeartRate = rawHeartRate === null || rawHeartRate === undefined || rawHeartRate === ''
+      ? null
+      : Number(rawHeartRate);
     let transformedAssessDate = screening?.assessment_date || '';
 
     const recordDqmFlags = [];
@@ -145,7 +178,7 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
       });
     } else {
       // Standardize to Title Case if all uppercase or lowercase
-      const standardizedName = titleCase(transformedName);
+      const standardizedName = titleCase(transformedName.trim().replace(/\s+/g, ' '));
       if (standardizedName !== transformedName) {
         transformedName = standardizedName;
         etlMetrics.transformations.namesStandardized++;
@@ -176,7 +209,20 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
       });
     } else {
       const dobDetails = parseDateDetails(transformedDob);
-      if (dobDetails.isValid && !dobDetails.isStandardIso) {
+      const isFutureDob = dobDetails.isValid && dobDetails.formattedIso > todayIsoDate();
+      if (!dobDetails.isValid || isFutureDob) {
+        recordDqmFlags.push('Invalid DOB');
+        etlMetrics.dqmIssues.push({
+          source: 'Source 1 (CRM)',
+          member_id: memberId,
+          field: 'dob',
+          value: transformedDob,
+          category: 'Invalid DOB',
+          dqmPrinciple: 'Accuracy',
+          severity: 'High',
+          action: 'Verify the date of birth with the member and correct the source record.'
+        });
+      } else if (!dobDetails.isStandardIso) {
         transformedDob = dobDetails.formattedIso;
         etlMetrics.transformations.datesStandardized++;
         etlMetrics.transformations.totalChanges++;
@@ -184,6 +230,11 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
     }
 
     // 3. DQM Check: Email
+    const normalizedEmail = transformedEmail.toLowerCase();
+    if (normalizedEmail !== transformedEmail && isValidEmail(transformedEmail)) {
+      transformedEmail = normalizedEmail;
+      etlMetrics.transformations.totalChanges++;
+    }
     if (!isValidEmail(transformedEmail)) {
       recordDqmFlags.push('Malformed Email');
       etlMetrics.dqmIssues.push({
@@ -213,12 +264,14 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
       });
     } else {
       const lowerParq = transformedParq.toLowerCase().trim();
-      if (SCREENING_RESULT_ABBR_MAP[lowerParq]) {
-        const expanded = SCREENING_RESULT_ABBR_MAP[lowerParq];
+      const expanded = SCREENING_RESULT_ABBR_MAP[lowerParq];
+      if (expanded) {
         transformedParq = expanded;
         etlMetrics.transformations.abbrResultsStandardized++;
         etlMetrics.transformations.totalChanges++;
-      } else if (!lowerParq || lowerParq === 'unknown' || !VALID_SCREENING_RESULTS.includes(lowerParq)) {
+      } else if (VALID_SCREENING_RESULTS.includes(lowerParq)) {
+        transformedParq = lowerParq.charAt(0).toUpperCase() + lowerParq.slice(1);
+      } else {
         recordDqmFlags.push('Ambiguous Screening');
         etlMetrics.dqmIssues.push({
           source: 'Source 2 (Clinic)',
@@ -234,7 +287,7 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
 
       // 5. Biometric Range Validation (Resting Heart Rate)
       if (transformedHeartRate !== null) {
-        if (transformedHeartRate < 40 || transformedHeartRate > 200) {
+        if (!Number.isInteger(transformedHeartRate) || transformedHeartRate < 40 || transformedHeartRate > 200) {
           recordDqmFlags.push('Physiologically Impossible Heart Rate');
           etlMetrics.dqmIssues.push({
             source: 'Source 2 (Clinic)',
@@ -244,7 +297,7 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
             category: 'Biometric Range Anomaly',
             dqmPrinciple: 'Accuracy',
             severity: 'High',
-            action: `Heart rate ${transformedHeartRate} BPM out of human resting range (40-200 BPM).`
+            action: 'The heart-rate value is not a whole number in the accepted 40-200 BPM range. Verify it against the clinic record.'
           });
         }
       }
@@ -252,7 +305,20 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
       // Standardize assessment date
       if (transformedAssessDate) {
         const assessDateDetails = parseDateDetails(transformedAssessDate);
-        if (assessDateDetails.isValid && !assessDateDetails.isStandardIso) {
+        const isFutureAssessment = assessDateDetails.isValid && assessDateDetails.formattedIso > todayIsoDate();
+        if (!assessDateDetails.isValid || isFutureAssessment) {
+          recordDqmFlags.push('Invalid Assessment Date');
+          etlMetrics.dqmIssues.push({
+            source: 'Source 2 (Clinic)',
+            member_id: memberId,
+            field: 'assessment_date',
+            value: transformedAssessDate,
+            category: 'Invalid Assessment Date',
+            dqmPrinciple: 'Timeliness',
+            severity: 'High',
+            action: 'Verify the assessment date against the clinic record.'
+          });
+        } else if (!assessDateDetails.isStandardIso) {
           transformedAssessDate = assessDateDetails.formattedIso;
           etlMetrics.transformations.datesStandardized++;
           etlMetrics.transformations.totalChanges++;
@@ -265,11 +331,18 @@ function runEtlPipeline(membersRaw, screeningsRaw, checkinsRaw) {
     let safetyClearanceStatus = 'ACTIVE_CLEARANCE';
     let riskTier = 'LOW';
 
-    if (transformedParq === 'Flagged') {
+    const medicalFlag = String(screening?.medical_flag ?? '').trim().toLowerCase();
+    const hasMedicalFlag = ['yes', 'true', '1', 'flagged'].includes(medicalFlag);
+
+    const knownParqStatus = ['Cleared', 'Flagged', 'Pending'].includes(transformedParq);
+    const invalidHeartRate = transformedHeartRate !== null &&
+      (!Number.isInteger(transformedHeartRate) || transformedHeartRate < 40 || transformedHeartRate > 200);
+
+    if (transformedParq === 'Flagged' || hasMedicalFlag || invalidHeartRate) {
       safetyClearanceStatus = 'BLOCKED_MEDICAL_FLAG';
       riskTier = 'HIGH';
       etlMetrics.transformations.medicalBlocksApplied++;
-    } else if (!screening || transformedParq === 'Pending' || transformedParq === 'Unknown' || transformedParq === '') {
+    } else if (!screening || !knownParqStatus || transformedParq !== 'Cleared') {
       safetyClearanceStatus = 'RESTRICTED_PENDING_PARQ';
       riskTier = 'MEDIUM';
     }

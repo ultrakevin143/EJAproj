@@ -3,22 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { Search, RefreshCw, BarChart3, Database, AlertCircle, ArrowRight } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { apiFetch } from '../../lib/api';
 
 interface Member360 {
   member_id: string;
   full_name: string;
-  dob: string;
-  email: string;
   membership_tier: string;
-  parq_status: string;
-  resting_heart_rate: number | null;
-  assessment_date: string;
   total_checkins: number;
   last_checkin_time: string | null;
   frequent_zone: string;
   safety_clearance_status: string;
-  risk_tier: string;
-  dqm_flags_count: number;
 }
 
 export default function ManagerView() {
@@ -30,7 +24,7 @@ export default function ManagerView() {
   const fetchOverview = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:3000/api/roles/manager/overview');
+      const res = await apiFetch('/roles/manager/overview');
       const data = await res.json();
       if (data.success) {
         setKpis(data.kpis);
@@ -50,13 +44,11 @@ export default function ManagerView() {
   const totalMembers = kpis?.totalMembers || 0;
   const clearedCount = kpis?.clearedCount || 0;
   const restrictedCount = kpis?.restrictedCount || 0;
-  const blockedCount = kpis?.blockedCount || 0;
 
   // Real database pie chart values (no made-up fallback numbers)
   const clearancePieData = totalMembers > 0 ? [
-    { name: 'Active Clearance', value: clearedCount, color: '#16a34a' },
-    { name: 'Restricted Pending PAR-Q', value: restrictedCount, color: '#d97706' },
-    { name: 'Blocked Medical Flag', value: blockedCount, color: '#dc2626' }
+    { name: 'Active Clearance', value: clearedCount, color: '#3d7654' },
+    { name: 'Restricted', value: restrictedCount, color: '#b27b3d' }
   ].filter(d => d.value > 0) : [];
 
   // Real database zone throughput (from turnstile_scans table)
@@ -73,7 +65,8 @@ export default function ManagerView() {
       {/* Page Heading */}
       <div className="page-heading">
         <div>
-          <h1>Executive BI 360 Dashboard</h1>
+          <span className="eyebrow">Operations · consolidated member warehouse</span>
+          <h1>Operations overview</h1>
           <p>
             Consolidated Member 360 profile integrating Front-Desk CRM, Clinical PAR-Q screenings, and Turnstile IoT check-ins.
           </p>
@@ -92,36 +85,36 @@ export default function ManagerView() {
           </strong>
           <span className="text-xs text-blue-800 font-semibold font-mono">5-Stage Pipeline</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
-          <div className="p-3 bg-white rounded border border-slate-200">
+        <div className="etl-flow text-xs">
+          <div className="etl-stage">
             <span className="text-[11px] font-bold text-blue-700 block mb-1">Stage 1: Intake CRM</span>
             <strong className="text-slate-800 block text-xs">Source 1: Front-Desk</strong>
             <p className="text-[11px] text-slate-500 mt-1">
               Member registers. Initial safety status defaults to Restricted pending doctor screening.
             </p>
           </div>
-          <div className="p-3 bg-white rounded border border-slate-200">
+          <div className="etl-stage">
             <span className="text-[11px] font-bold text-emerald-700 block mb-1">Stage 2: Health Screening</span>
             <strong className="text-slate-800 block text-xs">Source 2: Clinic Station</strong>
             <p className="text-[11px] text-slate-500 mt-1">
               Doctor conducts PAR-Q and measures resting HR. Flags cardiac risk (e.g. &gt;100 BPM).
             </p>
           </div>
-          <div className="p-3 bg-white rounded border border-slate-200">
+          <div className="etl-stage">
             <span className="text-[11px] font-bold text-purple-700 block mb-1">Stage 3: Turnstile IoT</span>
             <strong className="text-slate-800 block text-xs">Source 3: IoT RFID Gates</strong>
             <p className="text-[11px] text-slate-500 mt-1">
               Machine queries warehouse: unlocks if Cleared; locks immediately if Flagged.
             </p>
           </div>
-          <div className="p-3 bg-white rounded border border-slate-200">
+          <div className="etl-stage">
             <span className="text-[11px] font-bold text-amber-700 block mb-1">Stage 4: Data Steward ETL</span>
             <strong className="text-slate-800 block text-xs">DQM Cleaning Engine</strong>
             <p className="text-[11px] text-slate-500 mt-1">
               Normalizes dirty dates, expands &apos;Clrd&apos;, and manages single-name review queue.
             </p>
           </div>
-          <div className="p-3 bg-white rounded border border-slate-200">
+          <div className="etl-stage">
             <span className="text-[11px] font-bold text-slate-800 block mb-1">Stage 5: Target Warehouse</span>
             <strong className="text-slate-800 block text-xs">integrated_members_360</strong>
             <p className="text-[11px] text-slate-500 mt-1">
@@ -151,14 +144,9 @@ export default function ManagerView() {
           <span>Active turnstile access</span>
         </div>
         <div>
-          <dt>Restricted Pending PAR-Q</dt>
+          <dt>Restricted Access</dt>
           <dd className="tabular-nums text-amber-700">{restrictedCount}</dd>
-          <span>Requires health screening</span>
-        </div>
-        <div>
-          <dt>Blocked Medical Flags</dt>
-          <dd className="tabular-nums text-red-700">{blockedCount}</dd>
-          <span>Cardiovascular risk lockout</span>
+          <span>Refer access questions to clinic staff</span>
         </div>
       </dl>
 
@@ -241,14 +229,14 @@ export default function ManagerView() {
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={zoneThroughputData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="zone" tick={{ fontSize: 10, fill: '#64748b' }} interval={0} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dce3d8" />
+                  <XAxis dataKey="zone" tick={{ fontSize: 10, fill: '#5d7166' }} interval={0} />
+                  <YAxis tick={{ fontSize: 11, fill: '#5d7166' }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#ffffff', borderRadius: 6, fontSize: 12 }}
                     formatter={(val: any) => [`${val} scans`, 'Scans']}
                   />
-                  <Bar dataKey="scans" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="scans" fill="#557c56" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -286,8 +274,6 @@ export default function ManagerView() {
                   <th>Member ID</th>
                   <th>Full Name</th>
                   <th>Tier</th>
-                  <th>PAR-Q Status</th>
-                  <th>Resting HR</th>
                   <th>Check-ins</th>
                   <th>Frequent Zone</th>
                   <th>Safety Clearance</th>
@@ -296,7 +282,7 @@ export default function ManagerView() {
               <tbody>
                 {filteredMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8 text-slate-400">
+                    <td colSpan={6} className="text-center py-8 text-slate-400">
                       No matching Member 360 records found.
                     </td>
                   </tr>
@@ -308,22 +294,6 @@ export default function ManagerView() {
                       <td>
                         <span className="status-pill neutral">{m.membership_tier}</span>
                       </td>
-                      <td>
-                        <span
-                          className={`status-pill ${
-                            m.parq_status === 'Cleared'
-                              ? 'positive'
-                              : m.parq_status === 'Flagged'
-                              ? 'negative'
-                              : 'warning'
-                          }`}
-                        >
-                          {m.parq_status || 'Pending'}
-                        </span>
-                      </td>
-                      <td className="tabular-nums font-semibold text-slate-700">
-                        {m.resting_heart_rate ? `${m.resting_heart_rate} BPM` : '—'}
-                      </td>
                       <td className="tabular-nums text-slate-700">{m.total_checkins}</td>
                       <td className="text-xs text-slate-600">{m.frequent_zone || 'None'}</td>
                       <td>
@@ -331,8 +301,6 @@ export default function ManagerView() {
                           className={`status-pill ${
                             m.safety_clearance_status === 'ACTIVE_CLEARANCE'
                               ? 'positive'
-                              : m.safety_clearance_status === 'BLOCKED_MEDICAL_FLAG'
-                              ? 'negative'
                               : 'warning'
                           }`}
                         >

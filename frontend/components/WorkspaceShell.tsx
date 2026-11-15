@@ -10,8 +10,7 @@ import {
   ShieldCheck,
   ChevronRight,
   LogOut,
-  Database,
-  Lock
+  Database
 } from 'lucide-react';
 
 export type UserRole = 'FRONTDESK' | 'CLINIC' | 'TURNSTILE' | 'STEWARD' | 'MANAGER' | 'ADMIN';
@@ -39,7 +38,7 @@ export default function WorkspaceShell({
   onSectionChange,
   children
 }: WorkspaceShellProps) {
-  const isAdministrator = currentUser.role === 'MANAGER' || currentUser.role === 'ADMIN';
+  const isAdmin = currentUser.role === 'ADMIN';
 
   // Navigation configuration with role-based permissions
   const allNavItems = [
@@ -55,35 +54,35 @@ export default function WorkspaceShell({
       label: 'Member Intake CRM',
       icon: UserCheck,
       subtitle: 'Source 1: Member Registration',
-      allowedRoles: ['FRONTDESK', 'MANAGER', 'ADMIN']
+      allowedRoles: ['FRONTDESK', 'ADMIN']
     },
     {
       id: 'clinic',
       label: 'Clinical PAR-Q',
       icon: Stethoscope,
       subtitle: 'Source 2: Health Screening',
-      allowedRoles: ['CLINIC', 'MANAGER', 'ADMIN']
+      allowedRoles: ['CLINIC', 'ADMIN']
     },
     {
       id: 'turnstile',
       label: 'Turnstile IoT Gate',
       icon: Radio,
       subtitle: 'Source 3: Physical Access',
-      allowedRoles: ['TURNSTILE', 'MANAGER', 'ADMIN']
+      allowedRoles: ['TURNSTILE', 'ADMIN']
     },
     {
       id: 'steward',
       label: 'ETL & Quality Management',
       icon: Layers,
       subtitle: 'Multi-Source ETL Pipeline',
-      allowedRoles: ['STEWARD', 'MANAGER', 'ADMIN']
+      allowedRoles: ['STEWARD', 'ADMIN']
     },
     {
       id: 'governance',
       label: 'Data Governance',
       icon: ShieldCheck,
       subtitle: 'EDM Rules & Ownership',
-      allowedRoles: ['STEWARD', 'MANAGER', 'ADMIN']
+      allowedRoles: ['STEWARD', 'ADMIN']
     }
   ];
 
@@ -102,22 +101,21 @@ export default function WorkspaceShell({
         <div className="brand">
           <div className="brand-monogram">F</div>
           <div>
-            <span>fitquality<span className="text-blue-600">.</span></span>
+            <span className="brand-name">FitQuality<span>.</span></span>
+            <small className="brand-caption">Member data office</small>
           </div>
         </div>
 
         {/* Workspace Account Monogram Block */}
         <div className="workspace-label">
           <strong>{currentUser.name}</strong>
-          <span className="text-[12px] text-slate-500 font-mono truncate block">
-            {currentUser.email}
-          </span>
+          <span>{currentUser.email}</span>
         </div>
 
         {/* Navigation Section */}
-        <nav className="flex flex-col gap-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">
-            {isAdministrator ? 'System Navigation' : 'Assigned Station'}
+        <nav aria-label="Role workspaces">
+          <span className="nav-section-label">
+            {isAdmin ? 'System Navigation' : 'Assigned Station'}
           </span>
 
           {visibleNavItems.map((item) => {
@@ -128,7 +126,8 @@ export default function WorkspaceShell({
               <button
                 key={item.id}
                 onClick={() => onSectionChange(item.id)}
-                className={`nav-link text-left w-full flex items-center justify-between ${
+                aria-current={isActive ? 'page' : undefined}
+                className={`nav-link ${
                   isActive ? 'active' : ''
                 }`}
               >
@@ -145,18 +144,20 @@ export default function WorkspaceShell({
         <div className="sidebar-footer">
           <strong>Role Authority</strong>
           <p className="text-xs text-slate-600 mt-1">
-            {isAdministrator
-              ? 'Administrator has full visibility across all 3 source systems and target warehouse.'
-              : `Signed in as ${currentUser.role}. Restricted strictly to assigned operational station.`}
+            {isAdmin
+              ? 'Administrator access includes all protected role workspaces.'
+              : currentUser.role === 'MANAGER'
+                ? 'Manager access is limited to the operations summary and approved clearance checks.'
+                : `Signed in as ${currentUser.role}. Restricted to the assigned operational station.`}
           </p>
         </div>
 
         {/* Database indicator */}
-        <div className="mt-4 pt-3 border-t border-slate-200 flex items-center gap-2 text-xs text-slate-500">
-          <Database className="h-3.5 w-3.5 text-slate-400" />
+        <div className="sidebar-database">
+          <Database className="h-3.5 w-3.5" />
           <div>
-            <span className="font-semibold text-slate-700">PostgreSQL Warehouse</span>
-            <div className="text-[11px] text-slate-400">Fitness Health Data Integration</div>
+            <strong>PostgreSQL warehouse</strong>
+            <div>Fitness health data integration</div>
           </div>
         </div>
       </aside>
@@ -181,7 +182,7 @@ export default function WorkspaceShell({
             {/* Sign Out Button */}
             <button
               onClick={onLogout}
-              className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-700 hover:bg-red-50 border border-slate-300 px-2.5 py-1.5 rounded transition font-medium"
+              className="topbar-signout"
               title="Sign out of this account"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -196,9 +197,9 @@ export default function WorkspaceShell({
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 py-3 px-8 text-xs text-slate-500 flex justify-between items-center bg-white">
+        <footer className="workspace-footer">
           <span>FitQuality · Fitness Club Member Health Screening Integration &amp; Data Quality Management</span>
-          <span className="font-mono text-[11px] text-slate-400">PostgreSQL Multi-Source Warehouse</span>
+          <span>PostgreSQL · multi-source warehouse</span>
         </footer>
       </div>
     </div>

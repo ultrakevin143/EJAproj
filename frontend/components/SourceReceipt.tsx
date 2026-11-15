@@ -50,7 +50,8 @@ export default function SourceReceipt({
           <strong>Target Warehouse</strong>
           <span>integrated_members_360</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 bg-blue-100 px-2.5 py-1 rounded">
+        <div className="receipt-warehouse-count" aria-label={`${warehouseCount} integrated warehouse rows`}>
+          <ArrowRight className="h-3.5 w-3.5" />
           <Database className="h-3.5 w-3.5" />
           <span>{warehouseCount}</span>
         </div>

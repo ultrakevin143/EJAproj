@@ -6,10 +6,12 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "dev:memory": "node scripts/dev-memory.js",
     "test": "node tests/audit.test.js",
     "check-neon": "node db/check-neon.js",
     "migrate": "node db/migrate.js",
-    "generate": "node generate_dataset.js"
+    "generate": "node generate_dataset.js",
+    "setup:demo-passwords": "node scripts/setup-demo-passwords.js"
   },
   "keywords": [],
   "author": "",

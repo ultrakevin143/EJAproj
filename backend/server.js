@@ -21,10 +21,13 @@
  *   GET    /api/health                        — Health check
  */
 
-require('dotenv').config();
+const path = require('path');
+const forceMemoryModeRequested = process.env.FITQUALITY_FORCE_MEMORY_DB === 'true';
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '.env.local'), override: true });
+if (forceMemoryModeRequested) process.env.FITQUALITY_FORCE_MEMORY_DB = 'true';
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
 const { testConnection } = require('./db/neon');
 
@@ -47,8 +50,22 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3001',
   credentials: true
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  const isWriteRequest = !['GET', 'HEAD', 'OPTIONS'].includes(req.method);
+  const origin = req.get('origin');
+  const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:3001';
+  if (isWriteRequest && origin && origin !== allowedOrigin) {
+    return res.status(403).json({ success: false, error: 'Request origin is not allowed.' });
+  }
+  return next();
+});
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ─── API Routes ───────────────────────────────────────────────
 app.use('/api/upload',      uploadRoutes);
@@ -79,7 +96,7 @@ app.use((req, res) => {
 // ─── Error Handler ────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error', details: err.message });
+  res.status(500).json({ error: 'Internal server error.' });
 });
 
 // ─── Startup ──────────────────────────────────────────────────
@@ -89,7 +106,12 @@ async function start() {
   console.log('  Industry: Fitness & Gym Health Records');
   console.log('═══════════════════════════════════════════════════');
 
-  await testConnection();
+  const databaseReady = await testConnection();
+  if (!databaseReady) {
+    console.error('Database connection failed. The server was not started.');
+    process.exitCode = 1;
+    return;
+  }
 
   app.listen(PORT, () => {
     console.log(`✅ Server running at http://localhost:${PORT}`);

@@ -6,7 +6,11 @@
 
 const express = require('express');
 const router = express.Router();
-const { query } = require('../db/neon');
+const { query, withTransaction } = require('../db/neon');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const { appendAuditEvent } = require('../lib/auditLog');
+
+router.use(requireAuth, requireRole('STEWARD', 'ADMIN'));
 
 // GET /api/sessions
 router.get('/', async (req, res) => {
@@ -18,29 +22,33 @@ router.get('/', async (req, res) => {
        ORDER BY uploaded_at DESC
        LIMIT 50`
     );
+    await appendAuditEvent(req.authUser, 'read', 'audit_sessions', '', 'Audit session list accessed.');
     return res.json({ success: true, sessions: result.rows });
   } catch (err) {
     console.error('Sessions fetch error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'The request could not be completed.' });
   }
 });
 
 // DELETE /api/sessions/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     // CASCADE will remove related records, errors, review queue, cleaned_records
-    const result = await query(
-      `DELETE FROM audit_sessions WHERE id = $1 RETURNING id`,
-      [id]
-    );
+    const result = await withTransaction(async (tx) => {
+      const deleted = await tx(`DELETE FROM audit_sessions WHERE id = $1 RETURNING id`, [id]);
+      if (deleted.rows[0]) {
+        await appendAuditEvent(req.authUser, 'delete', 'audit_session', id, 'Audit session and related data deleted.', tx);
+      }
+      return deleted;
+    });
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Session not found.' });
     }
     return res.json({ success: true, message: 'Session and all related data deleted.' });
   } catch (err) {
     console.error('Session delete error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'The request could not be completed.' });
   }
 });
 

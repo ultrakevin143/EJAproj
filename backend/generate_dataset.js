@@ -1,10 +1,4 @@
-/**
- * Gym Member Health Screening Dataset Generator
- * Produces 500 synthetic records with intentional DQM issues.
- *
- * Fields: Name | DOB | Email | Screening Result | Date Recorded
- * Screening Results: Cleared | Flagged | Pending  (and abbrev. errors)
- */
+
 
 const { faker } = require('@faker-js/faker');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;

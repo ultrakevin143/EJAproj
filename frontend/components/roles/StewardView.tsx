@@ -8,6 +8,7 @@ import ReviewQueueView from '../ReviewQueueView';
 import GovernanceView from '../GovernanceView';
 import EdmMatrixView from '../EdmMatrixView';
 import { ErrorLogItem } from '../../types/dqm';
+import { apiFetch, fetchLatestEtlRun, updateEtlIssue } from '../../lib/api';
 
 interface StewardViewProps {
   sessionId: string | null;
@@ -17,12 +18,16 @@ interface StewardViewProps {
 export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
   const [sources, setSources] = useState<any | null>(null);
   const [etlRunning, setEtlRunning] = useState(false);
-  const [etlResult, setEtlResult] = useState<any | null>(null);
+  const [pipelineRun, setPipelineRun] = useState<any | null>(null);
+  const [pipelineIssues, setPipelineIssues] = useState<any[]>([]);
+  const [savingIssue, setSavingIssue] = useState<string | null>(null);
+  const [issueNotes, setIssueNotes] = useState<Record<string, string>>({});
+  const [issueStatuses, setIssueStatuses] = useState<Record<string, 'Open' | 'Resolved' | 'Quarantined'>>({});
   const [activeTab, setActiveTab] = useState<'pipeline' | 'dqm' | 'review' | 'governance' | 'matrix'>('pipeline');
 
   const fetchSourceStats = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/roles/steward/sources');
+      const res = await apiFetch('/roles/steward/sources');
       const data = await res.json();
       if (data.success) {
         setSources(data.sources);
@@ -32,20 +37,32 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
     }
   };
 
+  const fetchLatestPipelineRun = async () => {
+    try {
+      const data = await fetchLatestEtlRun();
+      if (data.success) {
+        setPipelineRun(data.run || null);
+        setPipelineIssues(data.issues || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch ETL history:', err);
+    }
+  };
+
   useEffect(() => {
     fetchSourceStats();
+    fetchLatestPipelineRun();
   }, []);
 
   const handleRunEtl = async () => {
     setEtlRunning(true);
     try {
-      const res = await fetch('http://localhost:3000/api/roles/steward/run-etl', {
+      const res = await apiFetch('/roles/steward/run-etl', {
         method: 'POST'
       });
       const data = await res.json();
       if (data.success) {
-        setEtlResult(data.etlResult);
-        fetchSourceStats();
+        await Promise.all([fetchSourceStats(), fetchLatestPipelineRun()]);
       }
     } catch (err) {
       console.error('ETL run failed:', err);
@@ -54,12 +71,31 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
     }
   };
 
+  const saveIssueReview = async (issueId: string, status: 'Open' | 'Resolved' | 'Quarantined') => {
+    setSavingIssue(issueId);
+    try {
+      const result = await updateEtlIssue(issueId, { status, note: issueNotes[issueId] || '' });
+      if (result.success) await fetchLatestPipelineRun();
+      else console.error(result.error || 'Issue review could not be saved.');
+    } catch (err) {
+      console.error('Issue review could not be saved:', err);
+    } finally {
+      setSavingIssue(null);
+    }
+  };
+
+  const latestRun = pipelineRun;
+  const rawCount = latestRun
+    ? Number(latestRun.crm_rows || 0) + Number(latestRun.clinic_rows || 0) + Number(latestRun.turnstile_rows || 0)
+    : 0;
+
   return (
     <div>
       {/* Page Heading */}
       <div className="page-heading">
         <div>
-          <h1>Multi-Source ETL Pipeline &amp; Data Governance</h1>
+          <span className="eyebrow">Integration · quality · lineage</span>
+          <h1>Pipeline &amp; data quality</h1>
           <p>
             Extract from disparate CRM, Clinic, and IoT check-ins, apply DQM cleaning rules, and load into target warehouse.
           </p>
@@ -94,29 +130,30 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
         <div>
           <dt>Transformations Applied</dt>
           <dd className="tabular-nums text-blue-700">
-            {sources?.target_warehouse_360 ? (etlResult?.metrics?.transformations?.totalChanges || 267) : 0}
+            {latestRun?.status === 'succeeded' ? Number(latestRun.transformation_count || 0) : 0}
           </dd>
-          <span>{sources?.target_warehouse_360 ? 'Abbr expanded, ISO dates, casing' : 'Pending ETL execution'}</span>
+          <span>{latestRun?.status === 'succeeded' ? 'Recorded for the latest run' : 'Run the pipeline to calculate'}</span>
         </div>
         <div>
           <dt>DQM Anomalies Identified</dt>
           <dd className="tabular-nums text-amber-700">
-            {sources?.target_warehouse_360 ? (etlResult?.summary?.totalDqmIssues || 75) : 0}
+            {latestRun?.status === 'succeeded' ? Number(latestRun.issue_count || 0) : 0}
           </dd>
-          <span>{sources?.target_warehouse_360 ? 'Classified by 6 DQM principles' : 'Pending ETL execution'}</span>
+          <span>{latestRun?.status === 'succeeded' ? 'Saved with the pipeline run' : 'Run the pipeline to calculate'}</span>
         </div>
         <div>
           <dt>Human Review Queue</dt>
           <dd className="tabular-nums text-purple-700">
-            {sources?.target_warehouse_360 ? (etlResult?.summary?.reviewQueue?.length || 10) : 0}
+            {latestRun?.status === 'succeeded' ? Number(latestRun.review_queue_count || 0) : 0}
           </dd>
-          <span>{sources?.target_warehouse_360 ? 'Single-word names & missing DOB' : 'Pending ETL execution'}</span>
+          <span>{latestRun?.status === 'succeeded' ? 'Steward review items from the latest run' : 'Run the pipeline to calculate'}</span>
         </div>
       </dl>
 
       {/* Sub-navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 mb-6">
+      <nav className="steward-tabs" aria-label="Data steward sections">
         <button
+          aria-current={activeTab === 'pipeline' ? 'page' : undefined}
           onClick={() => setActiveTab('pipeline')}
           className={`pb-3 px-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'pipeline'
@@ -124,9 +161,10 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          ETL Execution &amp; Target Warehouse
+          Pipeline &amp; warehouse
         </button>
         <button
+          aria-current={activeTab === 'dqm' ? 'page' : undefined}
           onClick={() => setActiveTab('dqm')}
           className={`pb-3 px-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'dqm'
@@ -134,9 +172,10 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          DQM Error Findings ({errorLog.length || 75})
+          Quality issues ({pipelineIssues.length})
         </button>
         <button
+          aria-current={activeTab === 'review' ? 'page' : undefined}
           onClick={() => setActiveTab('review')}
           className={`pb-3 px-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'review'
@@ -144,9 +183,10 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Human Review Queue (10)
+          CSV Review Queue
         </button>
         <button
+          aria-current={activeTab === 'governance' ? 'page' : undefined}
           onClick={() => setActiveTab('governance')}
           className={`pb-3 px-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'governance'
@@ -154,9 +194,10 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          Governance Rules (Slide 15)
+          Governance register
         </button>
         <button
+          aria-current={activeTab === 'matrix' ? 'page' : undefined}
           onClick={() => setActiveTab('matrix')}
           className={`pb-3 px-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'matrix'
@@ -164,96 +205,105 @@ export default function StewardView({ sessionId, errorLog }: StewardViewProps) {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          EDM Integration Matrix (Slide 18/19)
+          EDM matrix
         </button>
-      </div>
+      </nav>
 
       {/* Tab 1: Pipeline Execution Details */}
       {activeTab === 'pipeline' && (
         <div className="space-y-6">
-          {etlResult && (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between text-xs text-emerald-900">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          {latestRun ? (
+            <div className="data-table-container p-5 space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <strong>ETL Pipeline Succeeded in {etlResult.executionTimeMs}ms</strong>
-                  <p className="text-emerald-800 mt-0.5">
-                    Extracted 582 records, applied 267 transformations, populated `integrated_members_360`.
-                  </p>
+                  <h2 className="font-semibold text-slate-900">Latest saved pipeline run</h2>
+                  <p className="text-xs text-slate-500 mt-1">Run ID: {latestRun.run_id}</p>
                 </div>
+                <span className={`status-pill ${latestRun.status === 'succeeded' ? 'positive' : latestRun.status === 'failed' ? 'negative' : 'warning'}`}>
+                  {latestRun.status}
+                </span>
               </div>
-              <span className="font-mono text-[11px] bg-emerald-200/60 px-2 py-1 rounded font-bold">
-                Status: WAREHOUSE_SYNCED
-              </span>
+              <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div><dt className="text-slate-500">Source rows</dt><dd className="font-semibold">{rawCount}</dd></div>
+                <div><dt className="text-slate-500">Warehouse rows</dt><dd className="font-semibold">{latestRun.loaded_rows || 0}</dd></div>
+                <div><dt className="text-slate-500">Quality issues</dt><dd className="font-semibold">{latestRun.issue_count || 0}</dd></div>
+                <div><dt className="text-slate-500">Orphan scans</dt><dd className="font-semibold">{latestRun.orphan_count || 0}</dd></div>
+                <div><dt className="text-slate-500">Transformations</dt><dd className="font-semibold">{latestRun.transformation_count || 0}</dd></div>
+                <div><dt className="text-slate-500">Steward review items</dt><dd className="font-semibold">{latestRun.review_queue_count || 0}</dd></div>
+                <div><dt className="text-slate-500">Started</dt><dd className="font-semibold">{new Date(latestRun.started_at).toLocaleString()}</dd></div>
+                <div><dt className="text-slate-500">Finished</dt><dd className="font-semibold">{latestRun.finished_at ? new Date(latestRun.finished_at).toLocaleString() : 'Still running'}</dd></div>
+              </dl>
+              {latestRun.error_message && <p className="text-sm text-red-700">{latestRun.error_message}</p>}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+              No saved pipeline runs yet. Run the pipeline to create the first run record.
             </div>
           )}
-
-          {/* Transformation Breakdown Table */}
-          <div className="data-table-container">
-            <div className="table-toolbar">
-              <strong className="text-sm text-slate-800">
-                Automated DQM Cleaning &amp; Standardization Rules Applied
-              </strong>
-              <span className="text-xs text-slate-500">267 Total Corrections</span>
-            </div>
-
-            <div className="table-scroll">
-              <table className="enterprise-table">
-                <thead>
-                  <tr>
-                    <th>Rule Name</th>
-                    <th>Target Field</th>
-                    <th>DQM Principle</th>
-                    <th>Transformation Logic</th>
-                    <th>Records Cleaned</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="font-semibold text-slate-800">Expand Abbreviated Status</td>
-                    <td className="font-mono text-xs">parq_status</td>
-                    <td><span className="status-pill warning">Consistency</span></td>
-                    <td className="text-xs text-slate-600">Maps &apos;Clrd&apos; &rarr; &apos;Cleared&apos;, &apos;Fla&apos; &rarr; &apos;Flagged&apos;</td>
-                    <td className="tabular-nums font-semibold text-slate-800">47 records</td>
-                  </tr>
-                  <tr>
-                    <td className="font-semibold text-slate-800">Standardize ISO-8601 Dates</td>
-                    <td className="font-mono text-xs">assessment_date, dob</td>
-                    <td><span className="status-pill warning">Consistency</span></td>
-                    <td className="text-xs text-slate-600">Converts MM/DD/YYYY and mixed slashes to YYYY-MM-DD</td>
-                    <td className="tabular-nums font-semibold text-slate-800">183 records</td>
-                  </tr>
-                  <tr>
-                    <td className="font-semibold text-slate-800">Title Case Proper Names</td>
-                    <td className="font-mono text-xs">full_name</td>
-                    <td><span className="status-pill positive">Accuracy</span></td>
-                    <td className="text-xs text-slate-600">Trims whitespace and applies Title Case casing</td>
-                    <td className="tabular-nums font-semibold text-slate-800">37 records</td>
-                  </tr>
-                  <tr>
-                    <td className="font-semibold text-slate-800">Cardiovascular Risk Lockout</td>
-                    <td className="font-mono text-xs">safety_clearance_status</td>
-                    <td><span className="status-pill negative">Reliability</span></td>
-                    <td className="text-xs text-slate-600">Assigns BLOCKED_MEDICAL_FLAG to any PAR-Q flagged member</td>
-                    <td className="tabular-nums font-semibold text-slate-800">29 records</td>
-                  </tr>
-                  <tr>
-                    <td className="font-semibold text-slate-800">Orphan Check-in Detection</td>
-                    <td className="font-mono text-xs">turnstile_scans</td>
-                    <td><span className="status-pill neutral">Relevance</span></td>
-                    <td className="text-xs text-slate-600">Identifies IoT scans referencing un-enrolled members</td>
-                    <td className="tabular-nums font-semibold text-slate-800">8 scans</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       )}
 
       {/* Tab 2: DQM Error Findings */}
       {activeTab === 'dqm' && (
-        <ErrorLogView errorLog={errorLog} />
+        <div className="space-y-6">
+          <div>
+            <h2 className="font-semibold text-slate-900 mb-3">Multi-source ETL issues</h2>
+            {pipelineIssues.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+                No saved ETL issues for the latest run.
+              </div>
+            ) : (
+              <div className="data-table-container overflow-x-auto">
+                <table className="enterprise-table min-w-[900px]">
+                  <thead>
+                    <tr><th>Source / Member</th><th>Field</th><th>Finding</th><th>Severity</th><th>Current Value</th><th>Review</th></tr>
+                  </thead>
+                  <tbody>
+                    {pipelineIssues.map((issue) => (
+                      <tr key={issue.id}>
+                        <td className="text-xs">{issue.source_name}<br /><span className="font-mono text-slate-500">{issue.member_id || '—'}</span></td>
+                        <td className="font-mono text-xs">{issue.field_name}</td>
+                        <td><strong>{issue.issue_category}</strong><br /><span className="text-xs text-slate-500">{issue.dqm_principle}</span></td>
+                        <td>{issue.severity}</td>
+                        <td className="max-w-[180px] truncate" title={issue.issue_value}>{issue.issue_value || '—'}</td>
+                        <td className="min-w-[230px]">
+                          <select
+                            aria-label={`Review status for ${issue.issue_category}`}
+                            value={issueStatuses[issue.id] || issue.review_status}
+                            onChange={(event) => setIssueStatuses((current) => ({ ...current, [issue.id]: event.target.value as 'Open' | 'Resolved' | 'Quarantined' }))}
+                            className="mb-2 w-full rounded border border-slate-300 px-2 py-1 text-xs"
+                          >
+                            <option>Open</option><option>Resolved</option><option>Quarantined</option>
+                          </select>
+                          <input
+                            value={issueNotes[issue.id] ?? issue.review_note ?? ''}
+                            onChange={(event) => setIssueNotes((current) => ({ ...current, [issue.id]: event.target.value }))}
+                            placeholder="Required note for resolution"
+                            maxLength={500}
+                            className="mb-2 w-full rounded border border-slate-300 px-2 py-1 text-xs"
+                          />
+                          <button
+                            type="button"
+                            disabled={savingIssue === issue.id}
+                            onClick={() => saveIssueReview(issue.id, issueStatuses[issue.id] || issue.review_status)}
+                            className="btn btn-secondary text-xs"
+                          >
+                            {savingIssue === issue.id ? 'Saving…' : 'Save review'}
+                          </button>
+                          {issue.reviewed_by && <p className="mt-1 text-[10px] text-slate-500">Reviewed by {issue.reviewed_by}</p>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          <div>
+            <h2 className="font-semibold text-slate-900 mb-3">CSV upload findings</h2>
+            <ErrorLogView errorLog={errorLog} />
+          </div>
+        </div>
       )}
 
       {/* Tab 3: Human Review Queue */}
